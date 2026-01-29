@@ -33,27 +33,30 @@ jobs:
         pip3 install aqtinstall==3.1.*
         
         # Install Qt 5.15.2 for WebAssembly
-        python3 -m aqt install-qt linux desktop 5.15.2 wasm_32 -O $PWD/Qt
+        aqt install-qt linux desktop 5.15.2 wasm_32
         
         # List installed files for debugging
-        echo "Checking Qt installation..."
-        ls -la $PWD/Qt/
-        ls -la $PWD/Qt/5.15.2/ || echo "5.15.2 not found"
-        ls -la $PWD/Qt/5.15.2/wasm_32/ || echo "wasm_32 not found"
+        echo "=== Checking Qt installation ==="
+        find . -name "Qt5Config.cmake" -o -name "Qt5CoreConfig.cmake" 2>/dev/null || echo "Qt cmake files not found"
         
     - name: Build WebAssembly
       run: |
         source $HOME/emsdk/emsdk_env.sh
         
-        # Set Qt paths
-        QT_ROOT=$PWD/Qt/5.15.2/wasm_32
+        # Find Qt installation
+        QT_ROOT=$(find $PWD -type d -name "wasm_32" 2>/dev/null | head -1)
+        echo "Found Qt at: $QT_ROOT"
+        
+        if [ -z "$QT_ROOT" ]; then
+          echo "ERROR: Qt installation not found!"
+          exit 1
+        fi
+        
         export Qt5_DIR=$QT_ROOT/lib/cmake/Qt5
         export PATH=$QT_ROOT/bin:$PATH
         
         echo "Qt5_DIR=$Qt5_DIR"
-        echo "Checking Qt cmake files..."
-        ls -la $QT_ROOT/lib/cmake/ || echo "cmake dir not found"
-        ls -la $QT_ROOT/lib/cmake/Qt5/ || echo "Qt5 cmake dir not found"
+        ls -la $Qt5_DIR || echo "Qt5 cmake dir not found at $Qt5_DIR"
         
         mkdir build-wasm
         cd build-wasm
@@ -61,7 +64,6 @@ jobs:
         emcmake cmake .. \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_PREFIX_PATH=$QT_ROOT \
-          -DQt5_DIR=$Qt5_DIR \
           -G Ninja
           
         cmake --build . --config Release -j2
