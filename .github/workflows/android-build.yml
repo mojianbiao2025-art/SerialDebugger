@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     
     steps:
     - name: Checkout code
@@ -21,27 +21,37 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v4
-      with:
-        version: '5.15.2'
-        host: 'linux'
-        target: 'android'
-        arch: 'android_arm64_v8a'
-        modules: 'qtserialport'
-        cache: true
-        
-    - name: Install Android SDK
-      uses: android-actions/setup-android@v3
-      
-    - name: Install Android NDK
+    - name: Install Qt for Android
       run: |
-        echo "y" | sdkmanager "ndk;21.4.7075529"
+        sudo apt-get update
+        sudo apt-get install -y python3-pip
+        pip3 install aqtinstall==3.1.*
         
-    - name: Set up environment variables
+        # Install Qt 5.15.2 for Android
+        python3 -m aqt install-qt linux android 5.15.2 android_arm64_v8a -m qtserialport
+        
+        # Set Qt environment
+        echo "Qt5_DIR=$PWD/5.15.2/android_arm64_v8a" >> $GITHUB_ENV
+        echo "$PWD/5.15.2/android_arm64_v8a/bin" >> $GITHUB_PATH
+        
+    - name: Install Android SDK and NDK
       run: |
-        echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-        echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/21.4.7075529" >> $GITHUB_ENV
+        # Install Android SDK command line tools
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+        unzip -q commandlinetools-linux-9477386_latest.zip
+        mkdir -p $HOME/android-sdk/cmdline-tools
+        mv cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+        
+        # Set Android SDK environment
+        echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+        echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        
+        # Accept licenses and install components
+        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3" "ndk;21.4.7075529"
+        
+        # Set NDK environment
+        echo "ANDROID_NDK_ROOT=$HOME/android-sdk/ndk/21.4.7075529" >> $GITHUB_ENV
         
     - name: Create build directory
       run: mkdir build-android
@@ -74,13 +84,13 @@ jobs:
     - name: Sign APK
       working-directory: build-android/android-build/build/outputs/apk/release
       run: |
-        # 创建临时密钥库（生产环境应使用安全的密钥）
+        # Create temporary keystore
         keytool -genkey -v -keystore release.keystore \
           -alias release -keyalg RSA -keysize 2048 -validity 10000 \
           -storepass android -keypass android \
           -dname "CN=SerialDebugger, OU=Dev, O=HansCNC, L=Shanghai, S=Shanghai, C=CN"
         
-        # 签名 APK
+        # Sign APK
         $ANDROID_SDK_ROOT/build-tools/30.0.3/apksigner sign \
           --ks release.keystore \
           --ks-key-alias release \
