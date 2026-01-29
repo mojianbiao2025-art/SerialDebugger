@@ -20,7 +20,11 @@ if(MSVC)
 endif()
 
 # Find Qt libraries
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets SerialPort)
+if(EMSCRIPTEN)
+    find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+else()
+    find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets SerialPort)
+endif()
 
 # Source files
 set(PROJECT_SOURCES
@@ -35,6 +39,14 @@ set(PROJECT_SOURCES
     resources.qrc
 )
 
+# Add WebAssembly specific sources
+if(EMSCRIPTEN)
+    list(APPEND PROJECT_SOURCES
+        webserialport.cpp
+        webserialport.h
+    )
+endif()
+
 # Add Windows resource file for icon
 if(WIN32)
     set(PROJECT_SOURCES ${PROJECT_SOURCES} app_icon.rc)
@@ -48,12 +60,24 @@ else()
 endif()
 
 # Link Qt libraries
-target_link_libraries(${PROJECT_NAME}
-    Qt5::Core
-    Qt5::Gui
-    Qt5::Widgets
-    Qt5::SerialPort
-)
+if(EMSCRIPTEN)
+    target_link_libraries(${PROJECT_NAME}
+        Qt5::Core
+        Qt5::Gui
+        Qt5::Widgets
+    )
+    # WebAssembly specific settings
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        LINK_FLAGS "-s USE_WEBGL2=1 -s FULL_ES3=1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap'] --bind"
+    )
+else()
+    target_link_libraries(${PROJECT_NAME}
+        Qt5::Core
+        Qt5::Gui
+        Qt5::Widgets
+        Qt5::SerialPort
+    )
+endif()
 
 # Set output directory
 set_target_properties(${PROJECT_NAME} PROPERTIES

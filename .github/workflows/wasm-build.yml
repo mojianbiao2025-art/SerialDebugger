@@ -1,0 +1,72 @@
+name: Build WebAssembly
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip cmake ninja-build
+        
+    - name: Install Emscripten
+      run: |
+        cd $HOME
+        git clone https://github.com/emscripten-core/emsdk.git
+        cd emsdk
+        ./emsdk install 3.1.37
+        ./emsdk activate 3.1.37
+        
+    - name: Install Qt for WebAssembly
+      run: |
+        pip3 install aqtinstall==3.1.*
+        python3 -m aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts
+        
+    - name: Build WebAssembly
+      run: |
+        source $HOME/emsdk/emsdk_env.sh
+        export Qt5_DIR=$PWD/5.15.2/wasm_32
+        export PATH=$Qt5_DIR/bin:$PATH
+        
+        mkdir build-wasm
+        cd build-wasm
+        
+        emcmake cmake .. \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_PREFIX_PATH=$Qt5_DIR \
+          -G Ninja
+          
+        cmake --build . --config Release
+        
+    - name: Prepare deployment
+      run: |
+        mkdir -p deploy
+        cp build-wasm/bin/SerialDebugger.* deploy/
+        cp index.html deploy/
+        cp lang_*.ini deploy/
+        cp styles.qss deploy/
+        
+    - name: Upload WebAssembly build
+      uses: actions/upload-artifact@v4
+      with:
+        name: SerialDebugger-WebAssembly
+        path: deploy/
+        
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./deploy
+        cname: serialdebugger.example.com

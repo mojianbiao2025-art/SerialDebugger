@@ -4,6 +4,13 @@ build-*/
 *.user
 *.user.*
 
+# WebAssembly build artifacts
+build-wasm/
+deploy/
+*.wasm
+*.js.mem
+*.data
+
 # Qt
 *.pro.user
 *.pro.user.*
