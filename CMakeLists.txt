@@ -19,6 +19,16 @@ if(MSVC)
     add_compile_options(/utf-8)
 endif()
 
+# WebAssembly specific configuration
+if(EMSCRIPTEN)
+    # Set CMAKE_PREFIX_PATH to help find Qt modules
+    if(DEFINED ENV{QT_ROOT})
+        list(APPEND CMAKE_PREFIX_PATH "$ENV{QT_ROOT}")
+        list(APPEND CMAKE_PREFIX_PATH "$ENV{QT_ROOT}/lib/cmake")
+        message(STATUS "Using Qt from: $ENV{QT_ROOT}")
+    endif()
+endif()
+
 # Find Qt libraries
 if(EMSCRIPTEN)
     find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
