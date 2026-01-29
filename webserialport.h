@@ -92,4 +92,10 @@ private:
     friend void webserial_onDataReceived(const char* data, int length);
 };
 
+
+// Forward declarations for friend functions
+void webserial_onOpened();
+void webserial_onError(const char* error);
+void webserial_onDataReceived(const char* data, int length);
+
 #endif // WEBSERIALPORT_H

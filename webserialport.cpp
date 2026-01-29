@@ -29,14 +29,14 @@ EM_JS(void, js_openSerialPort, (int baudRate, int dataBits, int stopBits, int pa
         })
         .then(() => {
             console.log('Serial port opened');
-            Module.ccall('webserial_onOpened', 'void', [], []);
+            Module.ccall('webserial_onOpened_c', 'void', [], []);
             startReading();
         })
         .catch(error => {
             console.error('Error opening serial port:', error);
             const errorMsg = error.toString();
             const errorPtr = allocateUTF8(errorMsg);
-            Module.ccall('webserial_onError', 'void', ['number'], [errorPtr]);
+            Module.ccall('webserial_onError_c', 'void', ['number'], [errorPtr]);
             _free(errorPtr);
         });
 
@@ -52,7 +52,7 @@ EM_JS(void, js_openSerialPort, (int baudRate, int dataBits, int stopBits, int pa
                     // Send data to C++
                     const dataPtr = Module._malloc(value.length);
                     Module.HEAPU8.set(value, dataPtr);
-                    Module.ccall('webserial_onDataReceived', 'void', 
+                    Module.ccall('webserial_onDataReceived_c', 'void', 
                                 ['number', 'number'], [dataPtr, value.length]);
                     Module._free(dataPtr);
                 }
@@ -97,32 +97,45 @@ EM_JS(void, js_writeSerialPort, (const char* data, int length), {
     }
 });
 
+#ifdef __EMSCRIPTEN__
 // C++ callbacks called from JavaScript
-extern "C" {
-    EMSCRIPTEN_KEEPALIVE
-    void webserial_onOpened() {
-        if (g_webSerialPort) {
-            g_webSerialPort->m_isOpen = true;
-        }
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    void webserial_onError(const char* error) {
-        if (g_webSerialPort) {
-            g_webSerialPort->m_errorString = QString::fromUtf8(error);
-            emit g_webSerialPort->errorOccurred(g_webSerialPort->m_errorString);
-        }
-    }
-
-    EMSCRIPTEN_KEEPALIVE
-    void webserial_onDataReceived(const char* data, int length) {
-        if (g_webSerialPort) {
-            g_webSerialPort->m_readBuffer.append(data, length);
-            emit g_webSerialPort->readyRead();
-        }
+void webserial_onOpened() {
+    if (g_webSerialPort) {
+        g_webSerialPort->m_isOpen = true;
     }
 }
 
+void webserial_onError(const char* error) {
+    if (g_webSerialPort) {
+        g_webSerialPort->m_errorString = QString::fromUtf8(error);
+        emit g_webSerialPort->errorOccurred(g_webSerialPort->m_errorString);
+    }
+}
+
+void webserial_onDataReceived(const char* data, int length) {
+    if (g_webSerialPort) {
+        g_webSerialPort->m_readBuffer.append(data, length);
+        emit g_webSerialPort->readyRead();
+    }
+}
+
+// Export for JavaScript
+extern "C" {
+    EMSCRIPTEN_KEEPALIVE
+    void webserial_onOpened_c() {
+        webserial_onOpened();
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void webserial_onError_c(const char* error) {
+        webserial_onError(error);
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void webserial_onDataReceived_c(const char* data, int length) {
+        webserial_onDataReceived(data, length);
+    }
+}
 #endif // __EMSCRIPTEN__
 
 WebSerialPort::WebSerialPort(QObject *parent)
