@@ -1,15 +1,12 @@
 @echo off
 echo ====================================
-echo Git Push Helper Script
+echo Git Push Helper Script (Safe)
 echo ====================================
 echo.
 
 REM 设置你的 GitHub 仓库地址
 set REPO_URL=https://github.com/mojianbiao2025-art/SerialDebugger.git
-
-REM 设置你的 GitHub 凭据（仅本地使用，不要分享此文件！）
 set GIT_USERNAME=mojianbiao2025-art
-set GIT_TOKEN=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
 
 REM 检查是否已初始化 Git
 if not exist ".git" (
@@ -44,12 +41,16 @@ if errorlevel 1 (
     echo.
 )
 
-REM 推送到 GitHub（使用保存的凭据）
+REM 推送到 GitHub
 echo [Info] Pushing to GitHub...
-git branch -M main
+echo.
+echo Please enter your credentials:
+echo Username: %GIT_USERNAME%
+echo Password: [Paste your Personal Access Token]
+echo.
 
-REM 使用 token 进行认证推送
-git push https://%GIT_USERNAME%:%GIT_TOKEN%@github.com/mojianbiao2025-art/SerialDebugger.git main
+git branch -M main
+git push -u origin main
 
 if errorlevel 1 (
     echo.
@@ -60,10 +61,11 @@ if errorlevel 1 (
     echo 2. Network connection issue
     echo 3. Repository permissions issue
     echo.
-    echo To update token:
+    echo To create/update token:
     echo 1. Go to: https://github.com/settings/tokens
-    echo 2. Generate new token
-    echo 3. Edit this file and update GIT_TOKEN variable
+    echo 2. Generate new token (classic)
+    echo 3. Select "repo" scope
+    echo 4. Copy and paste when prompted for password
     echo.
     pause
     exit /b 1
