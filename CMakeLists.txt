@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 project(SerialDebugger VERSION 1.0.0 LANGUAGES CXX)
 
@@ -6,7 +6,14 @@ project(SerialDebugger VERSION 1.0.0 LANGUAGES CXX)
 if(EMSCRIPTEN)
     # Set CMAKE_PREFIX_PATH to help find Qt modules
     if(DEFINED ENV{QT_ROOT})
-        set(CMAKE_PREFIX_PATH "$ENV{QT_ROOT};$ENV{QT_ROOT}/lib/cmake;${CMAKE_PREFIX_PATH}")
+        list(APPEND CMAKE_PREFIX_PATH 
+            "$ENV{QT_ROOT}"
+            "$ENV{QT_ROOT}/lib/cmake"
+            "$ENV{QT_ROOT}/lib/cmake/Qt5"
+            "$ENV{QT_ROOT}/lib/cmake/Qt5Core"
+            "$ENV{QT_ROOT}/lib/cmake/Qt5Gui"
+            "$ENV{QT_ROOT}/lib/cmake/Qt5Widgets"
+        )
         message(STATUS "Using Qt from: $ENV{QT_ROOT}")
         message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
     endif()

@@ -69,15 +69,15 @@ jobs:
           exit 1
         fi
         
+        # Verify Qt structure
+        echo "=== Verifying Qt installation structure ==="
+        ls -la $QT_ROOT/lib/cmake/Qt5/ || echo "Qt5 cmake dir missing"
+        ls -la $QT_ROOT/lib/cmake/Qt5Core/ || echo "Qt5Core cmake dir missing"
+        ls -la $QT_ROOT/lib/cmake/Qt5Gui/ || echo "Qt5Gui cmake dir missing"
+        ls -la $QT_ROOT/lib/cmake/Qt5Widgets/ || echo "Qt5Widgets cmake dir missing"
+        
         export Qt5_DIR=$QT_ROOT/lib/cmake/Qt5
         export PATH=$QT_ROOT/bin:$PATH
-        
-        echo "Qt5_DIR=$Qt5_DIR"
-        ls -la $Qt5_DIR || echo "Qt5 cmake dir not found at $Qt5_DIR"
-        
-        # Check for available Qt modules
-        echo "=== Available Qt modules ==="
-        ls -la $QT_ROOT/lib/cmake/ || echo "Cannot list cmake modules"
         
         # Create dummy Qt5Svg config if it doesn't exist
         if [ ! -d "$QT_ROOT/lib/cmake/Qt5Svg" ]; then
@@ -120,16 +120,24 @@ jobs:
         mkdir build-wasm
         cd build-wasm
         
-        # Set QT_ROOT and CMAKE_PREFIX_PATH for CMakeLists.txt
+        # Set environment variables for CMake
         export QT_ROOT=$QT_ROOT
-        export CMAKE_PREFIX_PATH=$QT_ROOT:$CMAKE_PREFIX_PATH
         
-        # Configure with explicit module paths
-        emcmake cmake .. \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_PREFIX_PATH=$QT_ROOT \
-          -DQt5_DIR=$QT_ROOT/lib/cmake/Qt5 \
-          -G Ninja
+        # Configure - use Qt's toolchain file if available
+        if [ -f "$QT_ROOT/lib/cmake/Qt5/Qt5Config.cmake" ]; then
+          echo "Using Qt5 from: $QT_ROOT/lib/cmake/Qt5"
+          emcmake cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$QT_ROOT;$QT_ROOT/lib/cmake" \
+            -DQt5_DIR="$QT_ROOT/lib/cmake/Qt5" \
+            -DQt5Core_DIR="$QT_ROOT/lib/cmake/Qt5Core" \
+            -DQt5Gui_DIR="$QT_ROOT/lib/cmake/Qt5Gui" \
+            -DQt5Widgets_DIR="$QT_ROOT/lib/cmake/Qt5Widgets" \
+            -G Ninja
+        else
+          echo "ERROR: Qt5Config.cmake not found!"
+          exit 1
+        fi
           
         cmake --build . --config Release -j2
         
