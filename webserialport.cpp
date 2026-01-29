@@ -97,8 +97,10 @@ EM_JS(void, js_writeSerialPort, (const char* data, int length), {
     }
 });
 
-#ifdef __EMSCRIPTEN__
+#endif // __EMSCRIPTEN__
+
 // C++ callbacks called from JavaScript
+#ifdef __EMSCRIPTEN__
 void webserial_onOpened() {
     if (g_webSerialPort) {
         g_webSerialPort->m_isOpen = true;
