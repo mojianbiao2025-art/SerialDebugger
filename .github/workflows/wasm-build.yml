@@ -73,13 +73,16 @@ jobs:
         # Set CMAKE_PREFIX_PATH before calling emcmake
         export CMAKE_PREFIX_PATH=$QT_ROOT:$CMAKE_PREFIX_PATH
         
-        # Configure with all necessary paths
+        # Configure with all necessary Qt module paths
         emcmake cmake .. \
           -DCMAKE_BUILD_TYPE=Release \
           -DQt5_DIR=$Qt5_DIR \
           -DQt5Core_DIR=$QT_ROOT/lib/cmake/Qt5Core \
           -DQt5Gui_DIR=$QT_ROOT/lib/cmake/Qt5Gui \
           -DQt5Widgets_DIR=$QT_ROOT/lib/cmake/Qt5Widgets \
+          -DQt5Svg_DIR=$QT_ROOT/lib/cmake/Qt5Svg \
+          -DQt5Network_DIR=$QT_ROOT/lib/cmake/Qt5Network \
+          -DQt5Zlib_DIR=$QT_ROOT/lib/cmake/Qt5Zlib \
           -DQT_QMAKE_EXECUTABLE=$QT_ROOT/bin/qmake \
           -G Ninja
           
