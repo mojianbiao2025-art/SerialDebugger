@@ -84,18 +84,25 @@ jobs:
           echo "Creating dummy Qt5Svg config..."
           mkdir -p $QT_ROOT/lib/cmake/Qt5Svg
           cat > $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake <<'EOFSVG'
-        # Dummy Qt5Svg config to satisfy Qt5Gui plugin dependencies
-        add_library(Qt5::Svg INTERFACE IMPORTED)
-        set(Qt5Svg_FOUND TRUE)
-        set(Qt5Svg_VERSION_STRING "5.15.2")
-        EOFSVG
+# Dummy Qt5Svg config to satisfy Qt5Gui plugin dependencies
+add_library(Qt5::Svg INTERFACE IMPORTED)
+set(Qt5Svg_FOUND TRUE)
+set(Qt5Svg_VERSION_STRING "1.0.0")
+set(Qt5Svg_VERSION_MAJOR 1)
+set(Qt5Svg_VERSION_MINOR 0)
+set(Qt5Svg_VERSION_PATCH 0)
+EOFSVG
           cat > $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfigVersion.cmake <<'EOFSVGVER'
-        set(PACKAGE_VERSION "5.15.2")
-        set(PACKAGE_VERSION_COMPATIBLE TRUE)
-        if("5.15.2" STREQUAL PACKAGE_FIND_VERSION)
-            set(PACKAGE_VERSION_EXACT TRUE)
-        endif()
-        EOFSVGVER
+set(PACKAGE_VERSION "1.0.0")
+set(PACKAGE_VERSION_COMPATIBLE TRUE)
+set(PACKAGE_VERSION_EXACT FALSE)
+if("${PACKAGE_FIND_VERSION}" VERSION_EQUAL "1.0.0")
+    set(PACKAGE_VERSION_EXACT TRUE)
+endif()
+if("${PACKAGE_FIND_VERSION}" VERSION_LESS "1.0.0")
+    set(PACKAGE_VERSION_COMPATIBLE TRUE)
+endif()
+EOFSVGVER
         fi
         
         # Create dummy Qt5Zlib config if it doesn't exist
@@ -133,6 +140,8 @@ jobs:
             -DQt5Core_DIR="$QT_ROOT/lib/cmake/Qt5Core" \
             -DQt5Gui_DIR="$QT_ROOT/lib/cmake/Qt5Gui" \
             -DQt5Widgets_DIR="$QT_ROOT/lib/cmake/Qt5Widgets" \
+            -DQt5Svg_DIR="$QT_ROOT/lib/cmake/Qt5Svg" \
+            -DQt5Zlib_DIR="$QT_ROOT/lib/cmake/Qt5Zlib" \
             -G Ninja
         else
           echo "ERROR: Qt5Config.cmake not found!"
