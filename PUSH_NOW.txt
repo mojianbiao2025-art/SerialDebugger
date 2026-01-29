@@ -1,0 +1,119 @@
+========================================
+🚀 立即推送到 GitHub
+🚀 Push to GitHub NOW
+========================================
+
+你的配置信息 / Your Configuration:
+- 用户名 / Username: mojianbiao2025-art
+- 邮箱 / Email: mojianbiao2025@gmail.com
+- 仓库 / Repository: https://github.com/mojianbiao2025-art/SerialDebugger
+
+========================================
+⚡ 3 步完成 / 3 Steps to Complete
+========================================
+
+步骤 1️⃣：配置 Git
+-----------------
+双击运行 / Double-click:
+  👉 setup_git.bat
+
+或手动执行 / Or manually:
+  git config --global user.name "mojianbiao2025-art"
+  git config --global user.email "mojianbiao2025@gmail.com"
+
+步骤 2️⃣：创建 Token
+-----------------
+1. 访问 / Visit:
+   👉 https://github.com/settings/tokens
+
+2. 点击 "Generate new token (classic)"
+
+3. 填写 / Fill in:
+   - Note: SerialDebugger Build
+   - Expiration: 90 days
+   - ✅ 勾选 "repo" 权限 / Check "repo" scope
+
+4. 点击 "Generate token"
+
+5. 📋 复制 token（只显示一次！）
+   📋 Copy token (shown once!)
+
+步骤 3️⃣：推送代码
+-----------------
+双击运行 / Double-click:
+  👉 git_push.bat
+
+输入 / Enter:
+  - 提交信息（或按回车）/ Commit message (or press Enter)
+  - 用户名 / Username: mojianbiao2025-art
+  - 密码 / Password: 粘贴你的 token / Paste your token
+
+========================================
+✅ 推送成功后 / After Successful Push
+========================================
+
+1. 查看仓库 / View repository:
+   https://github.com/mojianbiao2025-art/SerialDebugger
+
+2. 查看构建 / View build:
+   https://github.com/mojianbiao2025-art/SerialDebugger/actions
+
+3. 等待 10-15 分钟 / Wait 10-15 minutes
+
+4. 下载 APK / Download APK:
+   - 点击成功的构建 / Click successful build
+   - 向下滚动到 Artifacts / Scroll to Artifacts
+   - 点击下载 / Click to download
+   - 解压 ZIP 得到 APK / Extract ZIP to get APK
+
+========================================
+🎯 构建状态说明 / Build Status
+========================================
+
+🟡 黄色圆圈 = 正在构建中...
+   Yellow circle = Building...
+
+✅ 绿色勾号 = 构建成功！可以下载 APK
+   Green check = Success! Download APK
+
+❌ 红色叉号 = 构建失败，点击查看日志
+   Red X = Failed, click to view logs
+
+========================================
+❓ 常见问题 / FAQ
+========================================
+
+Q: 推送失败？
+A: 确保使用 Personal Access Token 而不是密码
+
+Q: 构建失败？
+A: 点击 "Re-run jobs" 重新运行
+
+Q: 找不到 APK？
+A: 确保构建成功（绿色勾号），然后在 Artifacts 中下载
+
+Q: Token 在哪里？
+A: https://github.com/settings/tokens
+
+========================================
+📞 需要帮助？/ Need Help?
+========================================
+
+📖 详细文档 / Detailed docs:
+   - READY_TO_PUSH.md
+   - GITHUB_SETUP.md
+   - QUICK_START_GITHUB.md
+
+📧 提交问题 / Submit issue:
+   https://github.com/mojianbiao2025-art/SerialDebugger/issues
+
+========================================
+🎉 准备好了吗？开始吧！
+🎉 Ready? Let's go!
+========================================
+
+1. 运行 setup_git.bat
+2. 创建 Token
+3. 运行 git_push.bat
+
+就这么简单！/ That's it!
