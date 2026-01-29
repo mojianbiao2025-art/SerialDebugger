@@ -2,6 +2,18 @@ cmake_minimum_required(VERSION 3.5)
 
 project(SerialDebugger VERSION 1.0.0 LANGUAGES CXX)
 
+# WebAssembly specific configuration - MUST be before find_package
+if(EMSCRIPTEN)
+    # Set CMAKE_PREFIX_PATH to help find Qt modules
+    if(DEFINED ENV{QT_ROOT})
+        set(CMAKE_PREFIX_PATH "$ENV{QT_ROOT};$ENV{QT_ROOT}/lib/cmake;${CMAKE_PREFIX_PATH}")
+        set(Qt5_DIR "$ENV{QT_ROOT}/lib/cmake/Qt5")
+        message(STATUS "Using Qt from: $ENV{QT_ROOT}")
+        message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+        message(STATUS "Qt5_DIR: ${Qt5_DIR}")
+    endif()
+endif()
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -17,16 +29,6 @@ if(MSVC)
     string(REPLACE "/RTCu" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
     # Add UTF-8 support for MSVC
     add_compile_options(/utf-8)
-endif()
-
-# WebAssembly specific configuration
-if(EMSCRIPTEN)
-    # Set CMAKE_PREFIX_PATH to help find Qt modules
-    if(DEFINED ENV{QT_ROOT})
-        list(APPEND CMAKE_PREFIX_PATH "$ENV{QT_ROOT}")
-        list(APPEND CMAKE_PREFIX_PATH "$ENV{QT_ROOT}/lib/cmake")
-        message(STATUS "Using Qt from: $ENV{QT_ROOT}")
-    endif()
 endif()
 
 # Find Qt libraries
