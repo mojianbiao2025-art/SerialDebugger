@@ -36,17 +36,22 @@ jobs:
     - name: Build WebAssembly
       run: |
         source $HOME/emsdk/emsdk_env.sh
-        export Qt5_DIR=$PWD/5.15.2/wasm_32
-        export PATH=$Qt5_DIR/bin:$PATH
-        export CMAKE_PREFIX_PATH=$Qt5_DIR
+        
+        # Set Qt paths
+        QT_ROOT=$PWD/5.15.2/wasm_32
+        export Qt5_DIR=$QT_ROOT/lib/cmake/Qt5
+        export PATH=$QT_ROOT/bin:$PATH
+        
+        echo "Qt5_DIR=$Qt5_DIR"
+        ls -la $QT_ROOT/lib/cmake/Qt5/ || echo "Qt5 cmake dir not found"
         
         mkdir build-wasm
         cd build-wasm
         
         emcmake cmake .. \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_PREFIX_PATH=$Qt5_DIR \
-          -DQt5_DIR=$Qt5_DIR/lib/cmake/Qt5 \
+          -DCMAKE_PREFIX_PATH=$QT_ROOT \
+          -DQt5_DIR=$Qt5_DIR \
           -G Ninja
           
         cmake --build . --config Release -j2
