@@ -10,10 +10,6 @@ if(EMSCRIPTEN)
         message(STATUS "Using Qt from: $ENV{QT_ROOT}")
         message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
     endif()
-    
-    # Disable Qt plugin imports that require unavailable modules
-    set(QT_NO_CREATE_VERSIONLESS_TARGETS TRUE)
-    set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 endif()
 
 set(CMAKE_CXX_STANDARD 11)

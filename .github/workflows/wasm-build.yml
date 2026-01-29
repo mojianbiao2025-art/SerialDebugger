@@ -33,17 +33,28 @@ jobs:
       run: |
         pip3 install aqtinstall==3.1.*
         
-        # List available modules first
-        echo "=== Checking available modules ==="
-        aqt list-qt linux desktop 5.15.2 wasm_32 || true
-        
-        # Install Qt 5.15.2 for WebAssembly with all available modules
-        # Try to install common modules, ignore errors for unavailable ones
+        # Install Qt 5.15.2 for WebAssembly
+        # Note: aqt might not have all modules, we'll work with what's available
+        aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts qtnetworkauth || \
         aqt install-qt linux desktop 5.15.2 wasm_32 || true
         
         # List installed files for debugging
         echo "=== Checking Qt installation ==="
-        find . -name "Qt5Config.cmake" -o -name "Qt5CoreConfig.cmake" 2>/dev/null || echo "Qt cmake files not found"
+        QT_ROOT=$(find $PWD -type d -name "wasm_32" 2>/dev/null | head -1)
+        if [ -n "$QT_ROOT" ]; then
+          echo "Qt installed at: $QT_ROOT"
+          echo "Available Qt modules:"
+          ls -la $QT_ROOT/lib/cmake/ 2>/dev/null || echo "Cannot list cmake modules"
+          
+          # Check for specific modules
+          echo "=== Checking for Qt5Svg ==="
+          find $QT_ROOT -name "Qt5SvgConfig.cmake" 2>/dev/null || echo "Qt5Svg not found"
+          echo "=== Checking for Qt5Zlib ==="
+          find $QT_ROOT -name "Qt5ZlibConfig.cmake" 2>/dev/null || echo "Qt5Zlib not found"
+        else
+          echo "ERROR: Qt installation not found!"
+          exit 1
+        fi
         
     - name: Build WebAssembly
       run: |
@@ -67,6 +78,44 @@ jobs:
         # Check for available Qt modules
         echo "=== Available Qt modules ==="
         ls -la $QT_ROOT/lib/cmake/ || echo "Cannot list cmake modules"
+        
+        # Create dummy Qt5Svg and Qt5Zlib config files if they don't exist
+        # This prevents Qt5Gui plugins from failing when they try to find these modules
+        if [ ! -d "$QT_ROOT/lib/cmake/Qt5Svg" ]; then
+          echo "Creating dummy Qt5Svg config..."
+          mkdir -p $QT_ROOT/lib/cmake/Qt5Svg
+          cat > $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake << 'EOF'
+# Dummy Qt5Svg config to satisfy Qt5Gui plugin dependencies
+add_library(Qt5::Svg INTERFACE IMPORTED)
+set(Qt5Svg_FOUND TRUE)
+set(Qt5Svg_VERSION_STRING "5.15.2")
+EOF
+          cat > $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfigVersion.cmake << 'EOF'
+set(PACKAGE_VERSION "5.15.2")
+set(PACKAGE_VERSION_COMPATIBLE TRUE)
+if("5.15.2" STREQUAL PACKAGE_FIND_VERSION)
+    set(PACKAGE_VERSION_EXACT TRUE)
+endif()
+EOF
+        fi
+        
+        if [ ! -d "$QT_ROOT/lib/cmake/Qt5Zlib" ]; then
+          echo "Creating dummy Qt5Zlib config..."
+          mkdir -p $QT_ROOT/lib/cmake/Qt5Zlib
+          cat > $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfig.cmake << 'EOF'
+# Dummy Qt5Zlib config to satisfy Qt5Gui plugin dependencies
+add_library(Qt5::Zlib INTERFACE IMPORTED)
+set(Qt5Zlib_FOUND TRUE)
+set(Qt5Zlib_VERSION_STRING "1.0.0")
+EOF
+          cat > $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfigVersion.cmake << 'EOF'
+set(PACKAGE_VERSION "1.0.0")
+set(PACKAGE_VERSION_COMPATIBLE TRUE)
+if("1.0.0" STREQUAL PACKAGE_FIND_VERSION)
+    set(PACKAGE_VERSION_EXACT TRUE)
+endif()
+EOF
+        fi
         
         mkdir build-wasm
         cd build-wasm
