@@ -70,10 +70,11 @@ jobs:
         mkdir build-wasm
         cd build-wasm
         
-        # Use CMAKE_PREFIX_PATH to let CMake find all Qt modules automatically
+        # Set both CMAKE_PREFIX_PATH and Qt5_DIR to ensure CMake finds Qt
         emcmake cmake .. \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_PREFIX_PATH=$QT_ROOT \
+          -DQt5_DIR=$Qt5_DIR \
           -DQT_QMAKE_EXECUTABLE=$QT_ROOT/bin/qmake \
           -G Ninja
           
