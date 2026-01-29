@@ -19,7 +19,11 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+#ifdef __EMSCRIPTEN__
+    , serialPort(new WebSerialPort(this))
+#else
     , serialPort(new QSerialPort(this))
+#endif
     , statusTimer(new QTimer(this))
     , rxBytes(0)
     , txBytes(0)
@@ -121,6 +125,8 @@ void MainWindow::initUI()
 void MainWindow::refreshPortList()
 {
     ui->portCombo->clear();
+    
+#ifndef __EMSCRIPTEN__
     const auto ports = QSerialPortInfo::availablePorts();
     for (const QSerialPortInfo &info : ports) {
         QString itemText = info.portName() + " - " + info.description();
@@ -130,6 +136,10 @@ void MainWindow::refreshPortList()
         int index = ui->portCombo->count() - 1;
         ui->portCombo->setItemData(index, itemText, Qt::ToolTipRole);
     }
+#else
+    // WebAssembly: User will select port through browser dialog
+    ui->portCombo->addItem("Click 'Open Port' to select...");
+#endif
 }
 
 void MainWindow::on_refreshButton_clicked()

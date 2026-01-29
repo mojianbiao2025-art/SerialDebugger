@@ -2,8 +2,15 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+
+// Use WebSerialPort for WebAssembly, QSerialPort for native platforms
+#ifdef __EMSCRIPTEN__
+#include "webserialport.h"
+#else
 #include <QSerialPort>
 #include <QSerialPortInfo>
+#endif
+
 #include <QTimer>
 #include <QLabel>
 #include <QTranslator>
@@ -162,7 +169,13 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    
+#ifdef __EMSCRIPTEN__
+    WebSerialPort *serialPort;
+#else
     QSerialPort *serialPort;
+#endif
+    
     QTimer *statusTimer;
     qint64 rxBytes;  // Received bytes counter
     qint64 txBytes;  // Transmitted bytes counter
