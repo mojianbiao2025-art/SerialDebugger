@@ -32,8 +32,8 @@ jobs:
       run: |
         pip3 install aqtinstall==3.1.*
         
-        # Install Qt 5.15.2 for WebAssembly
-        aqt install-qt linux desktop 5.15.2 wasm_32
+        # Install Qt 5.15.2 for WebAssembly with additional modules
+        aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts qtsvg
         
         # List installed files for debugging
         echo "=== Checking Qt installation ==="
