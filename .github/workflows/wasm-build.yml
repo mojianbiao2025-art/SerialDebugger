@@ -31,18 +31,28 @@ jobs:
     - name: Install Qt for WebAssembly
       run: |
         pip3 install aqtinstall==3.1.*
-        python3 -m aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts
+        
+        # Install Qt 5.15.2 for WebAssembly
+        python3 -m aqt install-qt linux desktop 5.15.2 wasm_32 -O $PWD/Qt
+        
+        # List installed files for debugging
+        echo "Checking Qt installation..."
+        ls -la $PWD/Qt/
+        ls -la $PWD/Qt/5.15.2/ || echo "5.15.2 not found"
+        ls -la $PWD/Qt/5.15.2/wasm_32/ || echo "wasm_32 not found"
         
     - name: Build WebAssembly
       run: |
         source $HOME/emsdk/emsdk_env.sh
         
         # Set Qt paths
-        QT_ROOT=$PWD/5.15.2/wasm_32
+        QT_ROOT=$PWD/Qt/5.15.2/wasm_32
         export Qt5_DIR=$QT_ROOT/lib/cmake/Qt5
         export PATH=$QT_ROOT/bin:$PATH
         
         echo "Qt5_DIR=$Qt5_DIR"
+        echo "Checking Qt cmake files..."
+        ls -la $QT_ROOT/lib/cmake/ || echo "cmake dir not found"
         ls -la $QT_ROOT/lib/cmake/Qt5/ || echo "Qt5 cmake dir not found"
         
         mkdir build-wasm
