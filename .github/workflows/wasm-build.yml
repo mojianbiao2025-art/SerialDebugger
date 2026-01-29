@@ -25,8 +25,9 @@ jobs:
         cd $HOME
         git clone https://github.com/emscripten-core/emsdk.git
         cd emsdk
-        ./emsdk install 3.1.37
-        ./emsdk activate 3.1.37
+        # Use Emscripten 2.0.14 which is compatible with Qt 5.15.2
+        ./emsdk install 2.0.14
+        ./emsdk activate 2.0.14
         
     - name: Install Qt for WebAssembly
       run: |
@@ -63,20 +64,22 @@ jobs:
         echo "Qt5_DIR=$Qt5_DIR"
         ls -la $Qt5_DIR || echo "Qt5 cmake dir not found at $Qt5_DIR"
         
-        # Check for Qt5Svg and Qt5Zlib
-        echo "=== Checking for required Qt modules ==="
-        ls -la $QT_ROOT/lib/cmake/ | grep -E "Qt5Svg|Qt5Zlib" || echo "Qt5Svg or Qt5Zlib not found"
+        # Check for available Qt modules
+        echo "=== Available Qt modules ==="
+        ls -la $QT_ROOT/lib/cmake/ || echo "Cannot list cmake modules"
         
         mkdir build-wasm
         cd build-wasm
         
-        # Set QT_ROOT environment variable for CMakeLists.txt
+        # Set QT_ROOT and CMAKE_PREFIX_PATH for CMakeLists.txt
         export QT_ROOT=$QT_ROOT
         export CMAKE_PREFIX_PATH=$QT_ROOT:$CMAKE_PREFIX_PATH
         
-        # Simplified configuration - let CMake find modules automatically
+        # Configure with explicit module paths - let Qt find its own dependencies
         emcmake cmake .. \
           -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_PREFIX_PATH=$QT_ROOT \
+          -DQt5_DIR=$QT_ROOT/lib/cmake/Qt5 \
           -G Ninja
           
         cmake --build . --config Release -j2
