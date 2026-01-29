@@ -171,32 +171,62 @@ void MainWindow::on_openButton_clicked()
         
         // Set data bits
         switch (ui->dataBitsCombo->currentText().toInt()) {
+#ifdef __EMSCRIPTEN__
+            case 5: serialPort->setDataBits(WebSerialPort::Data5); break;
+            case 6: serialPort->setDataBits(WebSerialPort::Data6); break;
+            case 7: serialPort->setDataBits(WebSerialPort::Data7); break;
+            case 8: serialPort->setDataBits(WebSerialPort::Data8); break;
+#else
             case 5: serialPort->setDataBits(QSerialPort::Data5); break;
             case 6: serialPort->setDataBits(QSerialPort::Data6); break;
             case 7: serialPort->setDataBits(QSerialPort::Data7); break;
             case 8: serialPort->setDataBits(QSerialPort::Data8); break;
+#endif
         }
         
         // Set stop bits
         if (ui->stopBitsCombo->currentText() == "1") {
+#ifdef __EMSCRIPTEN__
+            serialPort->setStopBits(WebSerialPort::OneStop);
+        } else if (ui->stopBitsCombo->currentText() == "1.5") {
+            // WebAssembly doesn't support 1.5 stop bits, use 1
+            serialPort->setStopBits(WebSerialPort::OneStop);
+#else
             serialPort->setStopBits(QSerialPort::OneStop);
         } else if (ui->stopBitsCombo->currentText() == "1.5") {
             serialPort->setStopBits(QSerialPort::OneAndHalfStop);
+#endif
         } else {
+#ifdef __EMSCRIPTEN__
+            serialPort->setStopBits(WebSerialPort::TwoStop);
+#else
             serialPort->setStopBits(QSerialPort::TwoStop);
+#endif
         }
         
         // Set parity based on index
         int parityIndex = ui->parityCombo->currentIndex();
         if (parityIndex == 0) {
+#ifdef __EMSCRIPTEN__
+            serialPort->setParity(WebSerialPort::NoParity);
+        } else if (parityIndex == 1) {
+            serialPort->setParity(WebSerialPort::OddParity);
+        } else {
+            serialPort->setParity(WebSerialPort::EvenParity);
+#else
             serialPort->setParity(QSerialPort::NoParity);
         } else if (parityIndex == 1) {
             serialPort->setParity(QSerialPort::OddParity);
         } else {
             serialPort->setParity(QSerialPort::EvenParity);
+#endif
         }
         
+#ifdef __EMSCRIPTEN__
+        serialPort->setFlowControl(WebSerialPort::NoFlowControl);
+#else
         serialPort->setFlowControl(QSerialPort::NoFlowControl);
+#endif
         
         if (serialPort->open(QIODevice::ReadWrite)) {
             ui->openButton->setText(trans["close_port"]);
