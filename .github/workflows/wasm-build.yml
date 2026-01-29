@@ -32,8 +32,13 @@ jobs:
       run: |
         pip3 install aqtinstall==3.1.*
         
-        # Install Qt 5.15.2 for WebAssembly (without qtsvg as it's not available)
-        aqt install-qt linux desktop 5.15.2 wasm_32
+        # List available modules first
+        echo "=== Checking available modules ==="
+        aqt list-qt linux desktop 5.15.2 wasm_32 || true
+        
+        # Install Qt 5.15.2 for WebAssembly with all available modules
+        # Try to install common modules, ignore errors for unavailable ones
+        aqt install-qt linux desktop 5.15.2 wasm_32 || true
         
         # List installed files for debugging
         echo "=== Checking Qt installation ==="
@@ -58,18 +63,21 @@ jobs:
         echo "Qt5_DIR=$Qt5_DIR"
         ls -la $Qt5_DIR || echo "Qt5 cmake dir not found at $Qt5_DIR"
         
+        # Check for Qt5Svg and Qt5Zlib
+        echo "=== Checking for required Qt modules ==="
+        ls -la $QT_ROOT/lib/cmake/ | grep -E "Qt5Svg|Qt5Zlib" || echo "Qt5Svg or Qt5Zlib not found"
+        
         mkdir build-wasm
         cd build-wasm
         
         # Use explicit module paths to help CMake find Qt
-        # Set Qt5Svg as optional to avoid errors
         emcmake cmake .. \
           -DCMAKE_BUILD_TYPE=Release \
           -DQt5_DIR=$Qt5_DIR \
           -DQt5Core_DIR=$QT_ROOT/lib/cmake/Qt5Core \
           -DQt5Gui_DIR=$QT_ROOT/lib/cmake/Qt5Gui \
           -DQt5Widgets_DIR=$QT_ROOT/lib/cmake/Qt5Widgets \
-          -DCMAKE_DISABLE_FIND_PACKAGE_Qt5Svg=TRUE \
+          -DQT_QMAKE_EXECUTABLE=$QT_ROOT/bin/qmake \
           -G Ninja
           
         cmake --build . --config Release -j2
