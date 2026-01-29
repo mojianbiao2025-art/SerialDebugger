@@ -71,3 +71,7 @@ desktop.ini
 git_push.bat
 *_credentials.bat
 *.token
+
+# Local fix scripts (don't commit)
+fix_and_push.bat
+FIX_TOKEN_ISSUE.txt
