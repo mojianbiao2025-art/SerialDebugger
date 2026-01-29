@@ -32,8 +32,8 @@ jobs:
       run: |
         pip3 install aqtinstall==3.1.*
         
-        # Install Qt 5.15.2 for WebAssembly with additional modules
-        aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts qtsvg
+        # Install Qt 5.15.2 for WebAssembly (without qtsvg as it's not available)
+        aqt install-qt linux desktop 5.15.2 wasm_32
         
         # List installed files for debugging
         echo "=== Checking Qt installation ==="
@@ -62,12 +62,14 @@ jobs:
         cd build-wasm
         
         # Use explicit module paths to help CMake find Qt
+        # Set Qt5Svg as optional to avoid errors
         emcmake cmake .. \
           -DCMAKE_BUILD_TYPE=Release \
           -DQt5_DIR=$Qt5_DIR \
           -DQt5Core_DIR=$QT_ROOT/lib/cmake/Qt5Core \
           -DQt5Gui_DIR=$QT_ROOT/lib/cmake/Qt5Gui \
           -DQt5Widgets_DIR=$QT_ROOT/lib/cmake/Qt5Widgets \
+          -DCMAKE_DISABLE_FIND_PACKAGE_Qt5Svg=TRUE \
           -G Ninja
           
         cmake --build . --config Release -j2
