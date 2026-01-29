@@ -25,32 +25,18 @@ jobs:
         cd $HOME
         git clone https://github.com/emscripten-core/emsdk.git
         cd emsdk
-        # Use Emscripten 2.0.14 which is compatible with Qt 5.15.2
         ./emsdk install 2.0.14
         ./emsdk activate 2.0.14
         
     - name: Install Qt for WebAssembly
       run: |
         pip3 install aqtinstall==3.1.*
+        aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts qtnetworkauth || aqt install-qt linux desktop 5.15.2 wasm_32 || true
         
-        # Install Qt 5.15.2 for WebAssembly
-        # Note: aqt might not have all modules, we'll work with what's available
-        aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts qtnetworkauth || \
-        aqt install-qt linux desktop 5.15.2 wasm_32 || true
-        
-        # List installed files for debugging
-        echo "=== Checking Qt installation ==="
         QT_ROOT=$(find $PWD -type d -name "wasm_32" 2>/dev/null | head -1)
         if [ -n "$QT_ROOT" ]; then
           echo "Qt installed at: $QT_ROOT"
-          echo "Available Qt modules:"
           ls -la $QT_ROOT/lib/cmake/ 2>/dev/null || echo "Cannot list cmake modules"
-          
-          # Check for specific modules
-          echo "=== Checking for Qt5Svg ==="
-          find $QT_ROOT -name "Qt5SvgConfig.cmake" 2>/dev/null || echo "Qt5Svg not found"
-          echo "=== Checking for Qt5Zlib ==="
-          find $QT_ROOT -name "Qt5ZlibConfig.cmake" 2>/dev/null || echo "Qt5Zlib not found"
         else
           echo "ERROR: Qt installation not found!"
           exit 1
@@ -60,7 +46,6 @@ jobs:
       run: |
         source $HOME/emsdk/emsdk_env.sh
         
-        # Find Qt installation
         QT_ROOT=$(find $PWD -type d -name "wasm_32" 2>/dev/null | head -1)
         echo "Found Qt at: $QT_ROOT"
         
@@ -69,84 +54,44 @@ jobs:
           exit 1
         fi
         
-        # Verify Qt structure
-        echo "=== Verifying Qt installation structure ==="
-        ls -la $QT_ROOT/lib/cmake/Qt5/ || echo "Qt5 cmake dir missing"
-        ls -la $QT_ROOT/lib/cmake/Qt5Core/ || echo "Qt5Core cmake dir missing"
-        ls -la $QT_ROOT/lib/cmake/Qt5Gui/ || echo "Qt5Gui cmake dir missing"
-        ls -la $QT_ROOT/lib/cmake/Qt5Widgets/ || echo "Qt5Widgets cmake dir missing"
-        
         export Qt5_DIR=$QT_ROOT/lib/cmake/Qt5
         export PATH=$QT_ROOT/bin:$PATH
         
-        # Create dummy Qt5Svg config if it doesn't exist
         if [ ! -d "$QT_ROOT/lib/cmake/Qt5Svg" ]; then
           echo "Creating dummy Qt5Svg config..."
           mkdir -p $QT_ROOT/lib/cmake/Qt5Svg
-          cat > $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake <<'EOFSVG'
-# Dummy Qt5Svg config to satisfy Qt5Gui plugin dependencies
-add_library(Qt5::Svg INTERFACE IMPORTED)
-set(Qt5Svg_FOUND TRUE)
-set(Qt5Svg_VERSION_STRING "1.0.0")
-set(Qt5Svg_VERSION_MAJOR 1)
-set(Qt5Svg_VERSION_MINOR 0)
-set(Qt5Svg_VERSION_PATCH 0)
-EOFSVG
-          cat > $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfigVersion.cmake <<'EOFSVGVER'
-set(PACKAGE_VERSION "1.0.0")
-set(PACKAGE_VERSION_COMPATIBLE TRUE)
-set(PACKAGE_VERSION_EXACT FALSE)
-if("${PACKAGE_FIND_VERSION}" VERSION_EQUAL "1.0.0")
-    set(PACKAGE_VERSION_EXACT TRUE)
-endif()
-if("${PACKAGE_FIND_VERSION}" VERSION_LESS "1.0.0")
-    set(PACKAGE_VERSION_COMPATIBLE TRUE)
-endif()
-EOFSVGVER
+          echo 'add_library(Qt5::Svg INTERFACE IMPORTED)' > $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake
+          echo 'set(Qt5Svg_FOUND TRUE)' >> $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake
+          echo 'set(Qt5Svg_VERSION_STRING "1.0.0")' >> $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake
+          echo 'set(PACKAGE_VERSION "1.0.0")' > $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfigVersion.cmake
+          echo 'set(PACKAGE_VERSION_COMPATIBLE TRUE)' >> $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfigVersion.cmake
         fi
         
-        # Create dummy Qt5Zlib config if it doesn't exist
         if [ ! -d "$QT_ROOT/lib/cmake/Qt5Zlib" ]; then
           echo "Creating dummy Qt5Zlib config..."
           mkdir -p $QT_ROOT/lib/cmake/Qt5Zlib
-          cat > $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfig.cmake <<'EOFZLIB'
-        # Dummy Qt5Zlib config to satisfy Qt5Gui plugin dependencies
-        add_library(Qt5::Zlib INTERFACE IMPORTED)
-        set(Qt5Zlib_FOUND TRUE)
-        set(Qt5Zlib_VERSION_STRING "1.0.0")
-        EOFZLIB
-          cat > $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfigVersion.cmake <<'EOFZLIBVER'
-        set(PACKAGE_VERSION "1.0.0")
-        set(PACKAGE_VERSION_COMPATIBLE TRUE)
-        if("1.0.0" STREQUAL PACKAGE_FIND_VERSION)
-            set(PACKAGE_VERSION_EXACT TRUE)
-        endif()
-        EOFZLIBVER
+          echo 'add_library(Qt5::Zlib INTERFACE IMPORTED)' > $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfig.cmake
+          echo 'set(Qt5Zlib_FOUND TRUE)' >> $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfig.cmake
+          echo 'set(Qt5Zlib_VERSION_STRING "1.0.0")' >> $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfig.cmake
+          echo 'set(PACKAGE_VERSION "1.0.0")' > $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfigVersion.cmake
+          echo 'set(PACKAGE_VERSION_COMPATIBLE TRUE)' >> $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfigVersion.cmake
         fi
         
         mkdir build-wasm
         cd build-wasm
         
-        # Set environment variables for CMake
         export QT_ROOT=$QT_ROOT
         
-        # Configure - use Qt's toolchain file if available
-        if [ -f "$QT_ROOT/lib/cmake/Qt5/Qt5Config.cmake" ]; then
-          echo "Using Qt5 from: $QT_ROOT/lib/cmake/Qt5"
-          emcmake cmake .. \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH="$QT_ROOT;$QT_ROOT/lib/cmake" \
-            -DQt5_DIR="$QT_ROOT/lib/cmake/Qt5" \
-            -DQt5Core_DIR="$QT_ROOT/lib/cmake/Qt5Core" \
-            -DQt5Gui_DIR="$QT_ROOT/lib/cmake/Qt5Gui" \
-            -DQt5Widgets_DIR="$QT_ROOT/lib/cmake/Qt5Widgets" \
-            -DQt5Svg_DIR="$QT_ROOT/lib/cmake/Qt5Svg" \
-            -DQt5Zlib_DIR="$QT_ROOT/lib/cmake/Qt5Zlib" \
-            -G Ninja
-        else
-          echo "ERROR: Qt5Config.cmake not found!"
-          exit 1
-        fi
+        emcmake cmake .. \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_PREFIX_PATH="$QT_ROOT;$QT_ROOT/lib/cmake" \
+          -DQt5_DIR="$QT_ROOT/lib/cmake/Qt5" \
+          -DQt5Core_DIR="$QT_ROOT/lib/cmake/Qt5Core" \
+          -DQt5Gui_DIR="$QT_ROOT/lib/cmake/Qt5Gui" \
+          -DQt5Widgets_DIR="$QT_ROOT/lib/cmake/Qt5Widgets" \
+          -DQt5Svg_DIR="$QT_ROOT/lib/cmake/Qt5Svg" \
+          -DQt5Zlib_DIR="$QT_ROOT/lib/cmake/Qt5Zlib" \
+          -G Ninja
           
         cmake --build . --config Release -j2
         
