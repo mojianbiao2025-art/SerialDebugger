@@ -77,6 +77,8 @@ jobs:
           -DQt5Core_DIR=$QT_ROOT/lib/cmake/Qt5Core \
           -DQt5Gui_DIR=$QT_ROOT/lib/cmake/Qt5Gui \
           -DQt5Widgets_DIR=$QT_ROOT/lib/cmake/Qt5Widgets \
+          -DQt5Svg_DIR=$QT_ROOT/lib/cmake/Qt5Svg \
+          -DQt5Zlib_DIR=$QT_ROOT/lib/cmake/Qt5Zlib \
           -DQT_QMAKE_EXECUTABLE=$QT_ROOT/bin/qmake \
           -G Ninja
           
