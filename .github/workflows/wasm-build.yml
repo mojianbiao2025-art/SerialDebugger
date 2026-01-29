@@ -70,11 +70,16 @@ jobs:
         mkdir build-wasm
         cd build-wasm
         
-        # Set both CMAKE_PREFIX_PATH and Qt5_DIR to ensure CMake finds Qt
+        # Set CMAKE_PREFIX_PATH before calling emcmake
+        export CMAKE_PREFIX_PATH=$QT_ROOT:$CMAKE_PREFIX_PATH
+        
+        # Configure with all necessary paths
         emcmake cmake .. \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_PREFIX_PATH=$QT_ROOT \
           -DQt5_DIR=$Qt5_DIR \
+          -DQt5Core_DIR=$QT_ROOT/lib/cmake/Qt5Core \
+          -DQt5Gui_DIR=$QT_ROOT/lib/cmake/Qt5Gui \
+          -DQt5Widgets_DIR=$QT_ROOT/lib/cmake/Qt5Widgets \
           -DQT_QMAKE_EXECUTABLE=$QT_ROOT/bin/qmake \
           -G Ninja
           
