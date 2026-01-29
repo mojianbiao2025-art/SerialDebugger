@@ -31,13 +31,14 @@ jobs:
     - name: Install Qt for WebAssembly
       run: |
         pip3 install aqtinstall==3.1.*
-        python3 -m aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts
+        python3 -m aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts qtserialport
         
     - name: Build WebAssembly
       run: |
         source $HOME/emsdk/emsdk_env.sh
         export Qt5_DIR=$PWD/5.15.2/wasm_32
         export PATH=$Qt5_DIR/bin:$PATH
+        export CMAKE_PREFIX_PATH=$Qt5_DIR
         
         mkdir build-wasm
         cd build-wasm
@@ -45,9 +46,10 @@ jobs:
         emcmake cmake .. \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_PREFIX_PATH=$Qt5_DIR \
+          -DQt5_DIR=$Qt5_DIR/lib/cmake/Qt5 \
           -G Ninja
           
-        cmake --build . --config Release
+        cmake --build . --config Release -j2
         
     - name: Prepare deployment
       run: |
