@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QByteArray>
 #include <QString>
+#include <QIODevice>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -41,18 +42,26 @@ public:
         OddParity = 1,
         EvenParity = 2
     };
+    
+    enum FlowControl {
+        NoFlowControl = 0
+    };
 
     explicit WebSerialPort(QObject *parent = nullptr);
     ~WebSerialPort();
 
-    bool open();
+    bool open(QIODevice::OpenMode mode = QIODevice::ReadWrite);
     void close();
     bool isOpen() const;
+    
+    void setPortName(const QString &name) { m_portName = name; }
+    QString portName() const { return m_portName; }
 
     void setBaudRate(int baudRate);
     void setDataBits(DataBits dataBits);
     void setStopBits(StopBits stopBits);
     void setParity(Parity parity);
+    void setFlowControl(FlowControl flowControl) { Q_UNUSED(flowControl); }
 
     qint64 write(const QByteArray &data);
     QByteArray readAll();
@@ -65,6 +74,7 @@ signals:
 
 private:
     bool m_isOpen;
+    QString m_portName;
     int m_baudRate;
     DataBits m_dataBits;
     StopBits m_stopBits;
@@ -76,6 +86,10 @@ private:
     void setupWebSerial();
     static void onDataReceived(const char* data, int length);
 #endif
+
+    friend void webserial_onOpened();
+    friend void webserial_onError(const char* error);
+    friend void webserial_onDataReceived(const char* data, int length);
 };
 
 #endif // WEBSERIALPORT_H

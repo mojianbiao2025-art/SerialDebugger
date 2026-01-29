@@ -128,6 +128,7 @@ extern "C" {
 WebSerialPort::WebSerialPort(QObject *parent)
     : QObject(parent)
     , m_isOpen(false)
+    , m_portName("Web Serial")
     , m_baudRate(115200)
     , m_dataBits(Data8)
     , m_stopBits(OneStop)
@@ -150,8 +151,9 @@ WebSerialPort::~WebSerialPort()
 #endif
 }
 
-bool WebSerialPort::open()
+bool WebSerialPort::open(QIODevice::OpenMode mode)
 {
+    Q_UNUSED(mode);
 #ifdef __EMSCRIPTEN__
     js_openSerialPort(m_baudRate, m_dataBits, m_stopBits, m_parity);
     return true; // Actual result comes via callback

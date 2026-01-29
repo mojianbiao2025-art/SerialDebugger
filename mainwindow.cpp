@@ -68,7 +68,11 @@ MainWindow::MainWindow(QWidget *parent)
     initUI();
     setupAdvancedUI();
     
+#ifdef __EMSCRIPTEN__
+    connect(serialPort, &WebSerialPort::readyRead, this, &MainWindow::readData);
+#else
     connect(serialPort, &QSerialPort::readyRead, this, &MainWindow::readData);
+#endif
     connect(statusTimer, &QTimer::timeout, this, &MainWindow::updateStatus);
     connect(autoSendTimer, &QTimer::timeout, this, &MainWindow::on_autoSendTimer_timeout);
     
