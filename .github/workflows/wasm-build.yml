@@ -77,6 +77,16 @@ jobs:
           echo 'set(PACKAGE_VERSION_COMPATIBLE TRUE)' >> $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfigVersion.cmake
         fi
         
+        if [ ! -d "$QT_ROOT/lib/cmake/Qt5Network" ]; then
+          echo "Creating dummy Qt5Network config..."
+          mkdir -p $QT_ROOT/lib/cmake/Qt5Network
+          echo 'add_library(Qt5::Network INTERFACE IMPORTED)' > $QT_ROOT/lib/cmake/Qt5Network/Qt5NetworkConfig.cmake
+          echo 'set(Qt5Network_FOUND TRUE)' >> $QT_ROOT/lib/cmake/Qt5Network/Qt5NetworkConfig.cmake
+          echo 'set(Qt5Network_VERSION_STRING "1.0.0")' >> $QT_ROOT/lib/cmake/Qt5Network/Qt5NetworkConfig.cmake
+          echo 'set(PACKAGE_VERSION "1.0.0")' > $QT_ROOT/lib/cmake/Qt5Network/Qt5NetworkConfigVersion.cmake
+          echo 'set(PACKAGE_VERSION_COMPATIBLE TRUE)' >> $QT_ROOT/lib/cmake/Qt5Network/Qt5NetworkConfigVersion.cmake
+        fi
+        
         mkdir build-wasm
         cd build-wasm
         
@@ -91,6 +101,7 @@ jobs:
           -DQt5Widgets_DIR="$QT_ROOT/lib/cmake/Qt5Widgets" \
           -DQt5Svg_DIR="$QT_ROOT/lib/cmake/Qt5Svg" \
           -DQt5Zlib_DIR="$QT_ROOT/lib/cmake/Qt5Zlib" \
+          -DQt5Network_DIR="$QT_ROOT/lib/cmake/Qt5Network" \
           -G Ninja
           
         cmake --build . --config Release -j2
