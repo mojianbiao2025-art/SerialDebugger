@@ -79,6 +79,16 @@ jobs:
     - name: Configure CMake
       working-directory: build-android
       run: |
+        echo "=== Environment Variables ==="
+        echo "CMAKE_PREFIX_PATH: $CMAKE_PREFIX_PATH"
+        echo "QT_HOST_PATH: $QT_HOST_PATH"
+        echo "Qt6_DIR: $Qt6_DIR"
+        
+        echo "=== Qt Installation Check ==="
+        ls -la $CMAKE_PREFIX_PATH/lib/cmake/ || echo "cmake dir not found"
+        ls -la $CMAKE_PREFIX_PATH/lib/cmake/Qt6/ || echo "Qt6 cmake dir not found"
+        ls -la $CMAKE_PREFIX_PATH/lib/cmake/Qt6SerialPort/ || echo "Qt6SerialPort cmake dir not found"
+        
         cmake .. \
           -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
           -DANDROID_ABI=arm64-v8a \
@@ -87,7 +97,8 @@ jobs:
           -DQT_HOST_PATH=$QT_HOST_PATH \
           -DQt6_DIR=$Qt6_DIR \
           -DCMAKE_BUILD_TYPE=Release \
-          -DANDROID_STL=c++_shared
+          -DANDROID_STL=c++_shared \
+          -DCMAKE_FIND_DEBUG_MODE=ON
           
     - name: Build
       working-directory: build-android
