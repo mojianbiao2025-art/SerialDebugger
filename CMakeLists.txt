@@ -148,14 +148,13 @@ if(ANDROID AND QT_VERSION_MAJOR EQUAL 6)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/android
     )
-    
-    # Finalize the Android executable (generates deployment settings automatically)
-    qt_finalize_target(${PROJECT_NAME})
 endif()
 
 # Install rules
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
 )
 
 # Copy language files to build directory
