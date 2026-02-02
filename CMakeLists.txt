@@ -121,6 +121,11 @@ else()
         Qt${QT_VERSION_MAJOR}::Widgets
         Qt${QT_VERSION_MAJOR}::SerialPort
     )
+    
+    # Android specific: link zlib
+    if(ANDROID)
+        target_link_libraries(${PROJECT_NAME} z)
+    endif()
 endif()
 
 # Set output directory
