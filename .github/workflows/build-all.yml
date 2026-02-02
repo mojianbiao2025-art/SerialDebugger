@@ -34,10 +34,10 @@ jobs:
         pip3 install aqtinstall==3.1.*
         
         # Install Qt 6.5.3 for desktop (host tools)
-        python3 -m aqt install-qt linux desktop 6.5.3 gcc_64
+        python3 -m aqt install-qt linux desktop 6.5.3 gcc_64 -m qtserialport
         
-        # Install Qt 6.5.3 for Android
-        python3 -m aqt install-qt linux android 6.5.3 android_arm64_v8a
+        # Install Qt 6.5.3 for Android with SerialPort module
+        python3 -m aqt install-qt linux android 6.5.3 android_arm64_v8a -m qtserialport
         
         # Set Qt environment
         QT_HOST_PATH=$PWD/6.5.3/gcc_64
@@ -50,6 +50,9 @@ jobs:
         
         echo "Qt host installed at: $QT_HOST_PATH"
         echo "Qt Android installed at: $QT_ANDROID_PATH"
+        
+        # Verify SerialPort module
+        ls -la $QT_ANDROID_PATH/lib/cmake/ | grep -i serial || echo "SerialPort module check"
         
     - name: Install Android SDK and NDK
       run: |
