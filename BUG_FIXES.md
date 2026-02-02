@@ -2,7 +2,25 @@
 
 ## 修复的问题
 
-### 1. Tab标签字体白色看不清
+### 1. WebAssembly构建链接错误
+**问题描述：** WebAssembly构建时出现embind相关的未定义符号错误。
+
+**错误信息：**
+```
+error: undefined symbol: _embind_register_function
+error: undefined symbol: _emval_as
+error: undefined symbol: _emval_call
+...
+```
+
+**修复方案：**
+- 在CMakeLists.txt中为WebAssembly目标添加 `-lembind` 链接标志
+- 这是因为webserialport.cpp使用了Emscripten的embind库来与JavaScript交互
+
+**修改文件：**
+- `CMakeLists.txt` - 第 122 行
+
+### 2. Tab标签字体白色看不清
 **问题描述：** Tab标签（"Main"和"Plotter"）的文字颜色在某些状态下显示为白色或浅色，在浅色背景上看不清楚。
 
 **修复方案：**
@@ -14,7 +32,7 @@
 - `styles.qss` - 第 467-495 行
 - `mainwindow.cpp` - 第 858-863 行
 
-### 2. 语言切换功能增强
+### 3. 语言切换功能增强
 **问题描述：** 语言切换后，菜单中的选中状态没有正确更新。
 
 **修复方案：**
@@ -24,7 +42,7 @@
 **修改文件：**
 - `mainwindow.cpp` - 第 774-790 行
 
-### 3. Android界面显示不全
+### 4. Android界面显示不全
 **问题描述：** 在Android设备上，界面内容被截断，无法完整显示所有控件。
 
 **修复方案：**
@@ -37,6 +55,12 @@
 - `mainwindow.cpp` - 第 52-63 行
 
 ## 测试建议
+
+### 测试WebAssembly构建
+1. 运行构建脚本：`build_wasm.bat` 或使用GitHub Actions
+2. 确认构建成功完成，没有链接错误
+3. 在浏览器中打开生成的HTML文件
+4. 测试串口功能（需要支持Web Serial API的浏览器，如Chrome/Edge）
 
 ### 测试Tab标签显示
 1. 编译并运行应用程序
@@ -57,6 +81,14 @@
 4. 测试不同屏幕尺寸和方向（竖屏/横屏）
 
 ## 技术细节
+
+### WebAssembly embind库
+Emscripten的embind库用于在C++和JavaScript之间进行互操作。`webserialport.cpp`使用embind来：
+- 调用浏览器的Web Serial API
+- 处理JavaScript回调
+- 在C++和JavaScript之间传递数据
+
+链接时必须包含 `-lembind` 标志，否则会出现未定义符号错误。
 
 ### Tab标签颜色问题的根本原因
 原始样式表中：

@@ -703,10 +703,16 @@ void MainWindow::retranslateUI()
     // Window title
     setWindowTitle(trans["window_title"]);
     
-    // Tab titles
+    // Tab titles - CRITICAL: Force update tab text
     if (mainTabWidget) {
         mainTabWidget->setTabText(0, trans["tab_main"]);
         mainTabWidget->setTabText(1, trans["tab_plotter"]);
+        
+#ifdef Q_OS_ANDROID
+        // Android: Force repaint to ensure text is visible
+        mainTabWidget->tabBar()->update();
+        mainTabWidget->update();
+#endif
     }
     
     // Update plot widget text
@@ -754,11 +760,13 @@ void MainWindow::retranslateUI()
     ui->parityCombo->addItems({trans["parity_none"], trans["parity_odd"], trans["parity_even"]});
     ui->parityCombo->setCurrentIndex(currentParityIndex);
     
-    // Menu
+#ifndef Q_OS_ANDROID
+    // Menu - only update if not Android (Android uses custom menu)
     ui->menuFile->setTitle(trans["menu_file"]);
     ui->menuView->setTitle(trans["menu_view"]);
     ui->menuLanguage->setTitle(trans["menu_language"]);
     ui->menuHelp->setTitle(trans["menu_help"]);
+#endif
     
     ui->actionSaveReceive->setText(trans["save_receive"]);
     ui->actionSaveSend->setText(trans["save_send"]);
@@ -799,6 +807,11 @@ void MainWindow::retranslateUI()
         commandListWidget->item(1)->setText("CMD_2 | " + trans["example_command"] + " 2");
         commandListWidget->item(2)->setText("CMD_3 | " + trans["example_command"] + " 3");
     }
+    
+#ifdef Q_OS_ANDROID
+    // Android: Show a brief message to confirm language change
+    statusLabel->setText(trans["status_disconnected"]);
+#endif
 }
 
 // Advanced features implementation
@@ -874,12 +887,48 @@ void MainWindow::setupAdvancedUI()
     // Set minimum size for tab bar to ensure text is visible
     mainTabWidget->tabBar()->setMinimumHeight(45);
     
-    // Force black text color for tabs to ensure visibility
+    // Force black text color for tabs to ensure visibility - CRITICAL for Android
+#ifdef Q_OS_ANDROID
+    // Android needs inline styles with !important equivalent (direct property setting)
+    mainTabWidget->tabBar()->setStyleSheet(
+        "QTabBar::tab { "
+        "    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #f0f0f0, stop: 1 #e0e0e0); "
+        "    color: #000000; "
+        "    border: 2px solid #bdc3c7; "
+        "    border-bottom: none; "
+        "    border-top-left-radius: 8px; "
+        "    border-top-right-radius: 8px; "
+        "    padding: 12px 45px 12px 45px; "
+        "    margin-right: 6px; "
+        "    margin-top: 2px; "
+        "    font-weight: bold; "
+        "    font-size: 18pt; "
+        "    min-width: 120px; "
+        "    min-height: 20px; "
+        "} "
+        "QTabBar::tab:selected { "
+        "    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #ffffff, stop: 1 #f8f8f8); "
+        "    color: #000000; "
+        "    border-color: #3498db; "
+        "    border-bottom: 2px solid white; "
+        "    margin-bottom: -2px; "
+        "    padding: 12px 45px 12px 45px; "
+        "    font-size: 18pt; "
+        "} "
+        "QTabBar::tab:hover { "
+        "    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #e8e8e8, stop: 1 #d8d8d8); "
+        "    color: #000000; "
+        "    border-color: #95a5a6; "
+        "}"
+    );
+#else
+    // Desktop version - simpler style
     mainTabWidget->tabBar()->setStyleSheet(
         "QTabBar::tab { color: #000000; }"
         "QTabBar::tab:selected { color: #000000; }"
         "QTabBar::tab:hover { color: #000000; }"
     );
+#endif
     
     setCentralWidget(mainTabWidget);
     
