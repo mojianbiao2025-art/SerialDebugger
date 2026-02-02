@@ -55,9 +55,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Android-specific layout adjustments
     showMaximized();
     
-    // Set base font size
-    QFont baseFont = this->font();
-    baseFont.setPointSize(14);
+    // Set larger base font for better readability
+    QFont baseFont("Sans Serif", 16, QFont::Bold);
     setFont(baseFont);
     
     // Make the central widget scrollable
@@ -67,128 +66,192 @@ MainWindow::MainWindow(QWidget *parent)
     scrollArea->setWidget(ui->centralwidget);
     setCentralWidget(scrollArea);
     
-    // Redesign Port Settings layout for Android
-    QWidget* portSettingsContent = new QWidget();
-    QVBoxLayout* portLayout = new QVBoxLayout(portSettingsContent);
-    portLayout->setSpacing(10);
-    portLayout->setContentsMargins(10, 10, 10, 10);
+    // Get references to original widgets from UI
+    QLabel* origPortLabel = ui->groupBox->findChild<QLabel*>("label");
+    QLabel* origBaudLabel = ui->groupBox->findChild<QLabel*>("label_2");
+    QLabel* origDataLabel = ui->groupBox->findChild<QLabel*>("label_3");
+    QLabel* origStopLabel = ui->groupBox->findChild<QLabel*>("label_4");
+    QLabel* origParityLabel = ui->groupBox->findChild<QLabel*>("label_5");
     
-    // Port selection row
-    QHBoxLayout* portRow = new QHBoxLayout();
-    QLabel* portLabel = new QLabel("Port:", portSettingsContent);
-    portLabel->setMinimumWidth(80);
-    ui->portCombo->setMinimumHeight(50);
-    portRow->addWidget(portLabel);
-    portRow->addWidget(ui->portCombo, 1);
-    portLayout->addLayout(portRow);
-    
-    // Baud rate row
-    QHBoxLayout* baudRow = new QHBoxLayout();
-    QLabel* baudLabel = new QLabel("Baud Rate:", portSettingsContent);
-    baudLabel->setMinimumWidth(80);
-    ui->baudRateCombo->setMinimumHeight(50);
-    baudRow->addWidget(baudLabel);
-    baudRow->addWidget(ui->baudRateCombo, 1);
-    portLayout->addLayout(baudRow);
-    
-    // Data bits row
-    QHBoxLayout* dataRow = new QHBoxLayout();
-    QLabel* dataLabel = new QLabel("Data Bits:", portSettingsContent);
-    dataLabel->setMinimumWidth(80);
-    ui->dataBitsCombo->setMinimumHeight(50);
-    dataRow->addWidget(dataLabel);
-    dataRow->addWidget(ui->dataBitsCombo, 1);
-    portLayout->addLayout(dataRow);
-    
-    // Stop bits row
-    QHBoxLayout* stopRow = new QHBoxLayout();
-    QLabel* stopLabel = new QLabel("Stop Bits:", portSettingsContent);
-    stopLabel->setMinimumWidth(80);
-    ui->stopBitsCombo->setMinimumHeight(50);
-    stopRow->addWidget(stopLabel);
-    stopRow->addWidget(ui->stopBitsCombo, 1);
-    portLayout->addLayout(stopRow);
-    
-    // Parity row
-    QHBoxLayout* parityRow = new QHBoxLayout();
-    QLabel* parityLabel = new QLabel("Parity:", portSettingsContent);
-    parityLabel->setMinimumWidth(80);
-    ui->parityCombo->setMinimumHeight(50);
-    parityRow->addWidget(parityLabel);
-    parityRow->addWidget(ui->parityCombo, 1);
-    portLayout->addLayout(parityRow);
-    
-    // Buttons row
-    QHBoxLayout* buttonRow = new QHBoxLayout();
-    ui->refreshButton->setMinimumHeight(55);
-    ui->openButton->setMinimumHeight(55);
-    ui->refreshButton->setStyleSheet("QPushButton { background-color: #FF9800; color: white; font-weight: bold; border-radius: 5px; }");
-    ui->openButton->setStyleSheet("QPushButton { background-color: #4CAF50; color: white; font-weight: bold; border-radius: 5px; }");
-    buttonRow->addWidget(ui->openButton, 1);
-    buttonRow->addWidget(ui->refreshButton, 1);
-    portLayout->addLayout(buttonRow);
-    
-    // Replace old layout
-    delete ui->groupBox->layout();
-    ui->groupBox->setLayout(portLayout);
-    
-    // Adjust text areas
-    ui->receiveText->setMinimumHeight(300);
-    ui->sendText->setMinimumHeight(120);
-    ui->sendText->setMaximumHeight(150);
-    
-    // Style all buttons
-    QList<QPushButton*> buttons = findChildren<QPushButton*>();
-    for (QPushButton* btn : buttons) {
-        if (btn != ui->openButton && btn != ui->refreshButton) {
-            btn->setMinimumHeight(55);
-            if (btn == ui->sendButton) {
-                btn->setStyleSheet("QPushButton { background-color: #2196F3; color: white; font-weight: bold; border-radius: 5px; }");
-            } else if (btn == ui->clearReceiveButton || btn == ui->clearSendButton) {
-                btn->setStyleSheet("QPushButton { background-color: #F44336; color: white; font-weight: bold; border-radius: 5px; }");
-            }
-        }
+    // Set font and style for all labels
+    QFont labelFont("Sans Serif", 16, QFont::Bold);
+    if (origPortLabel) {
+        origPortLabel->setFont(labelFont);
+        origPortLabel->setStyleSheet("QLabel { color: #000000; }");
+    }
+    if (origBaudLabel) {
+        origBaudLabel->setFont(labelFont);
+        origBaudLabel->setStyleSheet("QLabel { color: #000000; }");
+    }
+    if (origDataLabel) {
+        origDataLabel->setFont(labelFont);
+        origDataLabel->setStyleSheet("QLabel { color: #000000; }");
+    }
+    if (origStopLabel) {
+        origStopLabel->setFont(labelFont);
+        origStopLabel->setStyleSheet("QLabel { color: #000000; }");
+    }
+    if (origParityLabel) {
+        origParityLabel->setFont(labelFont);
+        origParityLabel->setStyleSheet("QLabel { color: #000000; }");
     }
     
-    // Style checkboxes
-    QList<QCheckBox*> checkboxes = findChildren<QCheckBox*>();
-    for (QCheckBox* cb : checkboxes) {
-        cb->setMinimumHeight(50);
-        QFont cbFont = cb->font();
-        cbFont.setPointSize(13);
-        cb->setFont(cbFont);
+    // Completely rebuild Port Settings layout
+    QGridLayout* oldLayout = qobject_cast<QGridLayout*>(ui->groupBox->layout());
+    if (oldLayout) {
+        // Create new vertical layout
+        QVBoxLayout* newLayout = new QVBoxLayout();
+        newLayout->setSpacing(15);
+        newLayout->setContentsMargins(15, 20, 15, 15);
+        
+        // Port row
+        QHBoxLayout* portRow = new QHBoxLayout();
+        portRow->setSpacing(10);
+        if (origPortLabel) {
+            origPortLabel->setMinimumWidth(120);
+            portRow->addWidget(origPortLabel);
+        }
+        ui->portCombo->setMinimumHeight(60);
+        ui->portCombo->setFont(QFont("Sans Serif", 15));
+        ui->portCombo->setStyleSheet("QComboBox { padding: 10px; background: white; border: 2px solid #2196F3; border-radius: 5px; }");
+        portRow->addWidget(ui->portCombo, 1);
+        newLayout->addLayout(portRow);
+        
+        // Baud rate row
+        QHBoxLayout* baudRow = new QHBoxLayout();
+        baudRow->setSpacing(10);
+        if (origBaudLabel) {
+            origBaudLabel->setMinimumWidth(120);
+            baudRow->addWidget(origBaudLabel);
+        }
+        ui->baudRateCombo->setMinimumHeight(60);
+        ui->baudRateCombo->setFont(QFont("Sans Serif", 15));
+        ui->baudRateCombo->setStyleSheet("QComboBox { padding: 10px; background: white; border: 2px solid #2196F3; border-radius: 5px; }");
+        baudRow->addWidget(ui->baudRateCombo, 1);
+        newLayout->addLayout(baudRow);
+        
+        // Data bits row
+        QHBoxLayout* dataRow = new QHBoxLayout();
+        dataRow->setSpacing(10);
+        if (origDataLabel) {
+            origDataLabel->setMinimumWidth(120);
+            dataRow->addWidget(origDataLabel);
+        }
+        ui->dataBitsCombo->setMinimumHeight(60);
+        ui->dataBitsCombo->setFont(QFont("Sans Serif", 15));
+        ui->dataBitsCombo->setStyleSheet("QComboBox { padding: 10px; background: white; border: 2px solid #2196F3; border-radius: 5px; }");
+        dataRow->addWidget(ui->dataBitsCombo, 1);
+        newLayout->addLayout(dataRow);
+        
+        // Stop bits row
+        QHBoxLayout* stopRow = new QHBoxLayout();
+        stopRow->setSpacing(10);
+        if (origStopLabel) {
+            origStopLabel->setMinimumWidth(120);
+            stopRow->addWidget(origStopLabel);
+        }
+        ui->stopBitsCombo->setMinimumHeight(60);
+        ui->stopBitsCombo->setFont(QFont("Sans Serif", 15));
+        ui->stopBitsCombo->setStyleSheet("QComboBox { padding: 10px; background: white; border: 2px solid #2196F3; border-radius: 5px; }");
+        stopRow->addWidget(ui->stopBitsCombo, 1);
+        newLayout->addLayout(stopRow);
+        
+        // Parity row
+        QHBoxLayout* parityRow = new QHBoxLayout();
+        parityRow->setSpacing(10);
+        if (origParityLabel) {
+            origParityLabel->setMinimumWidth(120);
+            parityRow->addWidget(origParityLabel);
+        }
+        ui->parityCombo->setMinimumHeight(60);
+        ui->parityCombo->setFont(QFont("Sans Serif", 15));
+        ui->parityCombo->setStyleSheet("QComboBox { padding: 10px; background: white; border: 2px solid #2196F3; border-radius: 5px; }");
+        parityRow->addWidget(ui->parityCombo, 1);
+        newLayout->addLayout(parityRow);
+        
+        // Buttons row
+        QHBoxLayout* buttonRow = new QHBoxLayout();
+        buttonRow->setSpacing(10);
+        ui->openButton->setMinimumHeight(65);
+        ui->openButton->setFont(QFont("Sans Serif", 16, QFont::Bold));
+        ui->openButton->setStyleSheet("QPushButton { background-color: #4CAF50; color: white; border: none; border-radius: 8px; padding: 15px; } QPushButton:pressed { background-color: #45a049; }");
+        ui->refreshButton->setMinimumHeight(65);
+        ui->refreshButton->setFont(QFont("Sans Serif", 16, QFont::Bold));
+        ui->refreshButton->setStyleSheet("QPushButton { background-color: #FF9800; color: white; border: none; border-radius: 8px; padding: 15px; } QPushButton:pressed { background-color: #e68900; }");
+        buttonRow->addWidget(ui->openButton, 1);
+        buttonRow->addWidget(ui->refreshButton, 1);
+        newLayout->addLayout(buttonRow);
+        
+        // Remove old layout and set new one
+        QLayoutItem* item;
+        while ((item = oldLayout->takeAt(0)) != nullptr) {
+            delete item;
+        }
+        delete oldLayout;
+        ui->groupBox->setLayout(newLayout);
     }
     
     // Style group boxes
-    QList<QGroupBox*> groupBoxes = findChildren<QGroupBox*>();
-    for (QGroupBox* gb : groupBoxes) {
-        gb->setStyleSheet("QGroupBox { font-weight: bold; font-size: 15px; border: 2px solid #2196F3; border-radius: 5px; margin-top: 10px; padding-top: 10px; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }");
+    ui->groupBox->setStyleSheet("QGroupBox { font: bold 18px; color: #000000; border: 3px solid #2196F3; border-radius: 8px; margin-top: 15px; padding-top: 15px; background: #f5f5f5; } QGroupBox::title { subcontrol-origin: margin; left: 15px; padding: 0 10px; background: #f5f5f5; }");
+    ui->groupBox_2->setStyleSheet("QGroupBox { font: bold 18px; color: #000000; border: 3px solid #2196F3; border-radius: 8px; margin-top: 15px; padding-top: 15px; background: #f5f5f5; } QGroupBox::title { subcontrol-origin: margin; left: 15px; padding: 0 10px; background: #f5f5f5; }");
+    ui->groupBox_3->setStyleSheet("QGroupBox { font: bold 18px; color: #000000; border: 3px solid #2196F3; border-radius: 8px; margin-top: 15px; padding-top: 15px; background: #f5f5f5; } QGroupBox::title { subcontrol-origin: margin; left: 15px; padding: 0 10px; background: #f5f5f5; }");
+    
+    // Adjust text areas
+    ui->receiveText->setMinimumHeight(350);
+    ui->receiveText->setFont(QFont("Monospace", 14));
+    ui->receiveText->setStyleSheet("QTextEdit { background: white; border: 2px solid #2196F3; border-radius: 5px; padding: 10px; }");
+    
+    ui->sendText->setMinimumHeight(150);
+    ui->sendText->setMaximumHeight(200);
+    ui->sendText->setFont(QFont("Monospace", 14));
+    ui->sendText->setStyleSheet("QTextEdit { background: white; border: 2px solid #2196F3; border-radius: 5px; padding: 10px; }");
+    
+    // Style all other buttons
+    ui->sendButton->setMinimumHeight(65);
+    ui->sendButton->setFont(QFont("Sans Serif", 16, QFont::Bold));
+    ui->sendButton->setStyleSheet("QPushButton { background-color: #2196F3; color: white; border: none; border-radius: 8px; padding: 15px; } QPushButton:pressed { background-color: #1976D2; }");
+    
+    ui->clearReceiveButton->setMinimumHeight(65);
+    ui->clearReceiveButton->setFont(QFont("Sans Serif", 16, QFont::Bold));
+    ui->clearReceiveButton->setStyleSheet("QPushButton { background-color: #F44336; color: white; border: none; border-radius: 8px; padding: 15px; } QPushButton:pressed { background-color: #da190b; }");
+    
+    ui->clearSendButton->setMinimumHeight(65);
+    ui->clearSendButton->setFont(QFont("Sans Serif", 16, QFont::Bold));
+    ui->clearSendButton->setStyleSheet("QPushButton { background-color: #F44336; color: white; border: none; border-radius: 8px; padding: 15px; } QPushButton:pressed { background-color: #da190b; }");
+    
+    // Style checkboxes with larger font and better visibility
+    QList<QCheckBox*> checkboxes = findChildren<QCheckBox*>();
+    for (QCheckBox* cb : checkboxes) {
+        cb->setMinimumHeight(60);
+        cb->setFont(QFont("Sans Serif", 15, QFont::Bold));
+        cb->setStyleSheet("QCheckBox { color: #000000; spacing: 10px; } QCheckBox::indicator { width: 30px; height: 30px; }");
     }
     
-    // Create modern toolbar with better styling
+    // Create modern toolbar
     QToolBar* toolbar = addToolBar("Main Toolbar");
     toolbar->setMovable(false);
-    toolbar->setIconSize(QSize(32, 32));
-    toolbar->setStyleSheet("QToolBar { background: #2196F3; spacing: 5px; padding: 5px; } QToolButton { background: transparent; color: white; font-size: 16px; font-weight: bold; padding: 8px 15px; border-radius: 5px; } QToolButton:pressed { background: #1976D2; }");
+    toolbar->setIconSize(QSize(40, 40));
+    toolbar->setStyleSheet("QToolBar { background: #2196F3; spacing: 10px; padding: 10px; border-bottom: 3px solid #1976D2; } QToolButton { background: transparent; color: white; font: bold 18px; padding: 12px 20px; border-radius: 8px; } QToolButton:pressed { background: #1976D2; }");
     
-    // Add menu button with icon
+    // Add menu button
     QAction* menuAction = toolbar->addAction("☰ Menu");
-    menuAction->setToolTip("Open Menu");
     connect(menuAction, &QAction::triggered, this, [this]() {
         QMenu menu(this);
-        menu.setStyleSheet("QMenu { background-color: white; border: 2px solid #2196F3; font-size: 14px; } QMenu::item { padding: 10px 30px; } QMenu::item:selected { background-color: #E3F2FD; }");
+        menu.setStyleSheet("QMenu { background-color: white; border: 3px solid #2196F3; font: bold 16px; } QMenu::item { padding: 15px 40px; color: #000000; } QMenu::item:selected { background-color: #E3F2FD; } QMenu::separator { height: 2px; background: #2196F3; }");
         
-        // Add menu items with better organization
         QMenu* fileMenu = menu.addMenu("📁 File");
+        fileMenu->setStyleSheet(menu.styleSheet());
         fileMenu->addAction(ui->actionSaveReceive);
         fileMenu->addAction(ui->actionSaveSend);
         fileMenu->addSeparator();
         fileMenu->addAction(ui->actionExit);
         
         QMenu* viewMenu = menu.addMenu("👁 View");
+        viewMenu->setStyleSheet(menu.styleSheet());
         viewMenu->addAction(ui->actionClearAll);
         
         QMenu* langMenu = menu.addMenu("🌐 Language");
+        langMenu->setStyleSheet(menu.styleSheet());
         langMenu->addAction(ui->actionEnglish);
         langMenu->addAction(ui->actionChinese);
         langMenu->addAction(ui->actionJapanese);
@@ -196,6 +259,7 @@ MainWindow::MainWindow(QWidget *parent)
         langMenu->addAction(ui->actionFrench);
         
         QMenu* helpMenu = menu.addMenu("❓ Help");
+        helpMenu->setStyleSheet(menu.styleSheet());
         helpMenu->addAction(ui->actionAbout);
         
         menu.exec(QCursor::pos());
