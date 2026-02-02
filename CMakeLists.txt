@@ -113,9 +113,9 @@ if(EMSCRIPTEN)
         Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::Widgets
     )
-    # WebAssembly specific settings
+    # WebAssembly specific settings - simplified for compatibility
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        LINK_FLAGS "-s USE_WEBGL2=1 -s FULL_ES3=1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap'] --bind"
+        LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=1 -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap']"
     )
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE

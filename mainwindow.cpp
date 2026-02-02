@@ -53,109 +53,156 @@ MainWindow::MainWindow(QWidget *parent)
     
 #ifdef Q_OS_ANDROID
     // Android-specific layout adjustments
-    showMaximized();  // Full screen on Android
+    showMaximized();
     
-    // Increase font size for better readability on mobile
-    QFont font = this->font();
-    font.setPointSize(12);  // Fixed size for consistency
-    setFont(font);
+    // Set base font size
+    QFont baseFont = this->font();
+    baseFont.setPointSize(14);
+    setFont(baseFont);
     
     // Make the central widget scrollable
     QScrollArea* scrollArea = new QScrollArea(this);
     scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scrollArea->setWidget(ui->centralwidget);
     setCentralWidget(scrollArea);
     
-    // Adjust Port Settings group to use vertical layout on Android
-    QGridLayout* gridLayout = qobject_cast<QGridLayout*>(ui->groupBox->layout());
-    if (gridLayout) {
-        // Remove all items from grid layout
-        QList<QWidget*> widgets;
-        for (int i = gridLayout->count() - 1; i >= 0; --i) {
-            QLayoutItem* item = gridLayout->takeAt(i);
-            if (item->widget()) {
-                widgets.append(item->widget());
-            }
-            delete item;
-        }
-        
-        // Create new vertical layout for Port Settings
-        QVBoxLayout* vLayout = new QVBoxLayout();
-        
-        // Add widgets in vertical pairs (label + control)
-        for (int i = 0; i < widgets.size(); i += 2) {
-            if (i + 1 < widgets.size()) {
-                QHBoxLayout* hLayout = new QHBoxLayout();
-                hLayout->addWidget(widgets[i]);
-                hLayout->addWidget(widgets[i + 1], 1);
-                vLayout->addLayout(hLayout);
-            }
-        }
-        
-        delete ui->groupBox->layout();
-        ui->groupBox->setLayout(vLayout);
-    }
+    // Redesign Port Settings layout for Android
+    QWidget* portSettingsContent = new QWidget();
+    QVBoxLayout* portLayout = new QVBoxLayout(portSettingsContent);
+    portLayout->setSpacing(10);
+    portLayout->setContentsMargins(10, 10, 10, 10);
     
-    // Increase minimum heights for better touch interaction
-    ui->receiveText->setMinimumHeight(250);
+    // Port selection row
+    QHBoxLayout* portRow = new QHBoxLayout();
+    QLabel* portLabel = new QLabel("Port:", portSettingsContent);
+    portLabel->setMinimumWidth(80);
+    ui->portCombo->setMinimumHeight(50);
+    portRow->addWidget(portLabel);
+    portRow->addWidget(ui->portCombo, 1);
+    portLayout->addLayout(portRow);
+    
+    // Baud rate row
+    QHBoxLayout* baudRow = new QHBoxLayout();
+    QLabel* baudLabel = new QLabel("Baud Rate:", portSettingsContent);
+    baudLabel->setMinimumWidth(80);
+    ui->baudRateCombo->setMinimumHeight(50);
+    baudRow->addWidget(baudLabel);
+    baudRow->addWidget(ui->baudRateCombo, 1);
+    portLayout->addLayout(baudRow);
+    
+    // Data bits row
+    QHBoxLayout* dataRow = new QHBoxLayout();
+    QLabel* dataLabel = new QLabel("Data Bits:", portSettingsContent);
+    dataLabel->setMinimumWidth(80);
+    ui->dataBitsCombo->setMinimumHeight(50);
+    dataRow->addWidget(dataLabel);
+    dataRow->addWidget(ui->dataBitsCombo, 1);
+    portLayout->addLayout(dataRow);
+    
+    // Stop bits row
+    QHBoxLayout* stopRow = new QHBoxLayout();
+    QLabel* stopLabel = new QLabel("Stop Bits:", portSettingsContent);
+    stopLabel->setMinimumWidth(80);
+    ui->stopBitsCombo->setMinimumHeight(50);
+    stopRow->addWidget(stopLabel);
+    stopRow->addWidget(ui->stopBitsCombo, 1);
+    portLayout->addLayout(stopRow);
+    
+    // Parity row
+    QHBoxLayout* parityRow = new QHBoxLayout();
+    QLabel* parityLabel = new QLabel("Parity:", portSettingsContent);
+    parityLabel->setMinimumWidth(80);
+    ui->parityCombo->setMinimumHeight(50);
+    parityRow->addWidget(parityLabel);
+    parityRow->addWidget(ui->parityCombo, 1);
+    portLayout->addLayout(parityRow);
+    
+    // Buttons row
+    QHBoxLayout* buttonRow = new QHBoxLayout();
+    ui->refreshButton->setMinimumHeight(55);
+    ui->openButton->setMinimumHeight(55);
+    ui->refreshButton->setStyleSheet("QPushButton { background-color: #FF9800; color: white; font-weight: bold; border-radius: 5px; }");
+    ui->openButton->setStyleSheet("QPushButton { background-color: #4CAF50; color: white; font-weight: bold; border-radius: 5px; }");
+    buttonRow->addWidget(ui->openButton, 1);
+    buttonRow->addWidget(ui->refreshButton, 1);
+    portLayout->addLayout(buttonRow);
+    
+    // Replace old layout
+    delete ui->groupBox->layout();
+    ui->groupBox->setLayout(portLayout);
+    
+    // Adjust text areas
+    ui->receiveText->setMinimumHeight(300);
     ui->sendText->setMinimumHeight(120);
     ui->sendText->setMaximumHeight(150);
     
-    // Make buttons larger for touch
+    // Style all buttons
     QList<QPushButton*> buttons = findChildren<QPushButton*>();
     for (QPushButton* btn : buttons) {
-        btn->setMinimumHeight(55);
-        QFont btnFont = btn->font();
-        btnFont.setPointSize(11);
-        btn->setFont(btnFont);
+        if (btn != ui->openButton && btn != ui->refreshButton) {
+            btn->setMinimumHeight(55);
+            if (btn == ui->sendButton) {
+                btn->setStyleSheet("QPushButton { background-color: #2196F3; color: white; font-weight: bold; border-radius: 5px; }");
+            } else if (btn == ui->clearReceiveButton || btn == ui->clearSendButton) {
+                btn->setStyleSheet("QPushButton { background-color: #F44336; color: white; font-weight: bold; border-radius: 5px; }");
+            }
+        }
     }
     
-    // Make combo boxes larger for touch
-    QList<QComboBox*> combos = findChildren<QComboBox*>();
-    for (QComboBox* combo : combos) {
-        combo->setMinimumHeight(55);
-        QFont comboFont = combo->font();
-        comboFont.setPointSize(11);
-        combo->setFont(comboFont);
-    }
-    
-    // Make checkboxes larger
+    // Style checkboxes
     QList<QCheckBox*> checkboxes = findChildren<QCheckBox*>();
     for (QCheckBox* cb : checkboxes) {
         cb->setMinimumHeight(50);
         QFont cbFont = cb->font();
-        cbFont.setPointSize(11);
+        cbFont.setPointSize(13);
         cb->setFont(cbFont);
     }
     
-    // Create toolbar to replace menu bar
+    // Style group boxes
+    QList<QGroupBox*> groupBoxes = findChildren<QGroupBox*>();
+    for (QGroupBox* gb : groupBoxes) {
+        gb->setStyleSheet("QGroupBox { font-weight: bold; font-size: 15px; border: 2px solid #2196F3; border-radius: 5px; margin-top: 10px; padding-top: 10px; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }");
+    }
+    
+    // Create modern toolbar with better styling
     QToolBar* toolbar = addToolBar("Main Toolbar");
     toolbar->setMovable(false);
     toolbar->setIconSize(QSize(32, 32));
-    toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+    toolbar->setStyleSheet("QToolBar { background: #2196F3; spacing: 5px; padding: 5px; } QToolButton { background: transparent; color: white; font-size: 16px; font-weight: bold; padding: 8px 15px; border-radius: 5px; } QToolButton:pressed { background: #1976D2; }");
     
-    // Add menu actions to toolbar
+    // Add menu button with icon
     QAction* menuAction = toolbar->addAction("☰ Menu");
+    menuAction->setToolTip("Open Menu");
     connect(menuAction, &QAction::triggered, this, [this]() {
         QMenu menu(this);
-        menu.addMenu(ui->menuFile);
-        menu.addMenu(ui->menuView);
-        menu.addMenu(ui->menuLanguage);
-        menu.addMenu(ui->menuHelp);
+        menu.setStyleSheet("QMenu { background-color: white; border: 2px solid #2196F3; font-size: 14px; } QMenu::item { padding: 10px 30px; } QMenu::item:selected { background-color: #E3F2FD; }");
+        
+        // Add menu items with better organization
+        QMenu* fileMenu = menu.addMenu("📁 File");
+        fileMenu->addAction(ui->actionSaveReceive);
+        fileMenu->addAction(ui->actionSaveSend);
+        fileMenu->addSeparator();
+        fileMenu->addAction(ui->actionExit);
+        
+        QMenu* viewMenu = menu.addMenu("👁 View");
+        viewMenu->addAction(ui->actionClearAll);
+        
+        QMenu* langMenu = menu.addMenu("🌐 Language");
+        langMenu->addAction(ui->actionEnglish);
+        langMenu->addAction(ui->actionChinese);
+        langMenu->addAction(ui->actionJapanese);
+        langMenu->addAction(ui->actionGerman);
+        langMenu->addAction(ui->actionFrench);
+        
+        QMenu* helpMenu = menu.addMenu("❓ Help");
+        helpMenu->addAction(ui->actionAbout);
+        
         menu.exec(QCursor::pos());
     });
     
     // Hide traditional menu bar
     menuBar()->hide();
-    
-    // Adjust group box titles font
-    QList<QGroupBox*> groupBoxes = findChildren<QGroupBox*>();
-    for (QGroupBox* gb : groupBoxes) {
-        QFont gbFont = gb->font();
-        gbFont.setPointSize(12);
-        gbFont.setBold(true);
-        gb->setFont(gbFont);
-    }
 #else
     resize(1000, 700);
 #endif
@@ -867,7 +914,11 @@ void MainWindow::parseReceivedData(const QByteArray &data)
         dataStr.remove("plotter", Qt::CaseInsensitive);
         
         // Extract numeric values
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         QStringList parts = dataStr.split(QRegularExpression("[,\\s]+"), Qt::SkipEmptyParts);
+#else
+        QStringList parts = dataStr.split(QRegularExpression("[,\\s]+"), QString::SkipEmptyParts);
+#endif
         
         qint64 timestamp = QDateTime::currentMSecsSinceEpoch();
         int channelIndex = 0;
