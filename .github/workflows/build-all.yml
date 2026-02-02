@@ -149,12 +149,12 @@ jobs:
           # Fix the androidBuildToolsVersion variable if it's not defined
           if ! grep -q "def androidBuildToolsVersion" android-build/build.gradle; then
             echo "Adding androidBuildToolsVersion definition"
-            # Add the variable definition after the buildscript block
-            sed -i '/^buildscript {/,/^}/a\
-\
+            # Add the variable definition at the beginning of the file
+            sed -i '1i\
 def androidBuildToolsVersion = "30.0.3"\
 def androidCompileSdkVersion = 30\
-def androidNdkVersion = "25.1.8937393"' android-build/build.gradle
+def androidNdkVersion = "25.1.8937393"\
+' android-build/build.gradle
           fi
           
           echo "=== After fix (first 50 lines) ==="
