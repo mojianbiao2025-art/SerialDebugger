@@ -168,16 +168,16 @@ jobs:
           if [ ! -d "$QT_ROOT/lib/cmake/Qt5$MODULE" ]; then
             echo "Creating dummy Qt5$MODULE config..."
             mkdir -p $QT_ROOT/lib/cmake/Qt5$MODULE
-            cat > $QT_ROOT/lib/cmake/Qt5$MODULE/Qt5${MODULE}Config.cmake << EOF
-add_library(Qt5::$MODULE INTERFACE IMPORTED)
-set(Qt5${MODULE}_FOUND TRUE)
-set(Qt5${MODULE}_VERSION_STRING "5.15.2")
-EOF
-            cat > $QT_ROOT/lib/cmake/Qt5$MODULE/Qt5${MODULE}ConfigVersion.cmake << EOF
-set(PACKAGE_VERSION "5.15.2")
-set(PACKAGE_VERSION_COMPATIBLE TRUE)
-set(PACKAGE_VERSION_EXACT FALSE)
-EOF
+            cat > $QT_ROOT/lib/cmake/Qt5$MODULE/Qt5${MODULE}Config.cmake << 'EOFCONFIG'
+        add_library(Qt5::$MODULE INTERFACE IMPORTED)
+        set(Qt5${MODULE}_FOUND TRUE)
+        set(Qt5${MODULE}_VERSION_STRING "5.15.2")
+        EOFCONFIG
+            cat > $QT_ROOT/lib/cmake/Qt5$MODULE/Qt5${MODULE}ConfigVersion.cmake << 'EOFVERSION'
+        set(PACKAGE_VERSION "5.15.2")
+        set(PACKAGE_VERSION_COMPATIBLE TRUE)
+        set(PACKAGE_VERSION_EXACT FALSE)
+        EOFVERSION
           fi
         done
         
