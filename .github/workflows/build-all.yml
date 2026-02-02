@@ -143,15 +143,22 @@ jobs:
         
         echo "=== Checking generated build.gradle ==="
         if [ -f android-build/build.gradle ]; then
-          echo "Line 38 of build.gradle:"
-          sed -n '35,40p' android-build/build.gradle
+          echo "First 50 lines of build.gradle:"
+          head -50 android-build/build.gradle
           
-          # Fix the buildToolsVersion if it's empty
-          sed -i "s/buildToolsVersion ''/buildToolsVersion '30.0.3'/g" android-build/build.gradle
-          sed -i 's/buildToolsVersion ""/buildToolsVersion "30.0.3"/g' android-build/build.gradle
+          # Fix the androidBuildToolsVersion variable if it's not defined
+          if ! grep -q "def androidBuildToolsVersion" android-build/build.gradle; then
+            echo "Adding androidBuildToolsVersion definition"
+            # Add the variable definition after the buildscript block
+            sed -i '/^buildscript {/,/^}/a\
+\
+def androidBuildToolsVersion = "30.0.3"\
+def androidCompileSdkVersion = 30\
+def androidNdkVersion = "25.1.8937393"' android-build/build.gradle
+          fi
           
-          echo "=== After fix ==="
-          sed -n '35,40p' android-build/build.gradle
+          echo "=== After fix (first 50 lines) ==="
+          head -50 android-build/build.gradle
         fi
         
         # Run androiddeployqt again with fixed build.gradle
