@@ -42,7 +42,37 @@ MainWindow::MainWindow(QWidget *parent)
     
     // Set window properties
     setWindowTitle("Serial Port Debugger");
+    
+#ifdef Q_OS_ANDROID
+    // Android-specific layout adjustments
+    showMaximized();  // Full screen on Android
+    
+    // Increase font size for better readability on mobile
+    QFont font = this->font();
+    font.setPointSize(font.pointSize() + 2);
+    setFont(font);
+    
+    // Increase minimum heights for better touch interaction
+    ui->receiveText->setMinimumHeight(200);
+    ui->sendText->setMinimumHeight(100);
+    
+    // Make buttons larger for touch
+    QList<QPushButton*> buttons = findChildren<QPushButton*>();
+    for (QPushButton* btn : buttons) {
+        btn->setMinimumHeight(50);
+    }
+    
+    // Make combo boxes larger for touch
+    QList<QComboBox*> combos = findChildren<QComboBox*>();
+    for (QComboBox* combo : combos) {
+        combo->setMinimumHeight(50);
+    }
+    
+    // Hide menu bar on Android (use toolbar instead)
+    menuBar()->hide();
+#else
     resize(1000, 700);
+#endif
     
     // Create status bar labels
     statusLabel = new QLabel("Status: Disconnected", this);
