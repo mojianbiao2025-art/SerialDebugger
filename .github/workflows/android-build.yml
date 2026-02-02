@@ -27,10 +27,17 @@ jobs:
         # Install Qt 6.5.3 for Android
         python3 -m aqt install-qt linux android 6.5.3 android_arm64_v8a
         
+        # Verify installation
+        ls -la $PWD/6.5.3/ || echo "Qt directory not found"
+        find $PWD/6.5.3 -name "Qt6Config.cmake" || echo "Qt6Config.cmake not found"
+        
         # Set Qt environment
-        echo "Qt6_DIR=$PWD/6.5.3/android_arm64_v8a" >> $GITHUB_ENV
-        echo "CMAKE_PREFIX_PATH=$PWD/6.5.3/android_arm64_v8a" >> $GITHUB_ENV
-        echo "$PWD/6.5.3/android_arm64_v8a/bin" >> $GITHUB_PATH
+        QT_ROOT=$PWD/6.5.3/android_arm64_v8a
+        echo "Qt6_DIR=$QT_ROOT/lib/cmake/Qt6" >> $GITHUB_ENV
+        echo "CMAKE_PREFIX_PATH=$QT_ROOT" >> $GITHUB_ENV
+        echo "$QT_ROOT/bin" >> $GITHUB_PATH
+        
+        echo "Qt installed at: $QT_ROOT"
         
     - name: Install Android SDK and NDK
       run: |
@@ -57,11 +64,16 @@ jobs:
     - name: Configure CMake
       working-directory: build-android
       run: |
+        echo "CMAKE_PREFIX_PATH: $CMAKE_PREFIX_PATH"
+        echo "Qt6_DIR: $Qt6_DIR"
+        ls -la $CMAKE_PREFIX_PATH/lib/cmake/ || echo "cmake dir not found"
+        
         cmake .. \
           -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
           -DANDROID_ABI=arm64-v8a \
           -DANDROID_PLATFORM=android-23 \
           -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
+          -DQt6_DIR=$Qt6_DIR \
           -DCMAKE_BUILD_TYPE=Release \
           -DANDROID_STL=c++_shared
           
