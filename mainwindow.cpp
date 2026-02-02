@@ -15,6 +15,14 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSplitter>
+#include <QScrollArea>
+#include <QToolBar>
+#include <QMenu>
+#include <QCursor>
+#include <QGridLayout>
+#include <QGroupBox>
+#include <QCheckBox>
+#include <QComboBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -49,27 +57,105 @@ MainWindow::MainWindow(QWidget *parent)
     
     // Increase font size for better readability on mobile
     QFont font = this->font();
-    font.setPointSize(font.pointSize() + 2);
+    font.setPointSize(12);  // Fixed size for consistency
     setFont(font);
     
+    // Make the central widget scrollable
+    QScrollArea* scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setWidget(ui->centralwidget);
+    setCentralWidget(scrollArea);
+    
+    // Adjust Port Settings group to use vertical layout on Android
+    QGridLayout* gridLayout = qobject_cast<QGridLayout*>(ui->groupBox->layout());
+    if (gridLayout) {
+        // Remove all items from grid layout
+        QList<QWidget*> widgets;
+        for (int i = gridLayout->count() - 1; i >= 0; --i) {
+            QLayoutItem* item = gridLayout->takeAt(i);
+            if (item->widget()) {
+                widgets.append(item->widget());
+            }
+            delete item;
+        }
+        
+        // Create new vertical layout for Port Settings
+        QVBoxLayout* vLayout = new QVBoxLayout();
+        
+        // Add widgets in vertical pairs (label + control)
+        for (int i = 0; i < widgets.size(); i += 2) {
+            if (i + 1 < widgets.size()) {
+                QHBoxLayout* hLayout = new QHBoxLayout();
+                hLayout->addWidget(widgets[i]);
+                hLayout->addWidget(widgets[i + 1], 1);
+                vLayout->addLayout(hLayout);
+            }
+        }
+        
+        delete ui->groupBox->layout();
+        ui->groupBox->setLayout(vLayout);
+    }
+    
     // Increase minimum heights for better touch interaction
-    ui->receiveText->setMinimumHeight(200);
-    ui->sendText->setMinimumHeight(100);
+    ui->receiveText->setMinimumHeight(250);
+    ui->sendText->setMinimumHeight(120);
+    ui->sendText->setMaximumHeight(150);
     
     // Make buttons larger for touch
     QList<QPushButton*> buttons = findChildren<QPushButton*>();
     for (QPushButton* btn : buttons) {
-        btn->setMinimumHeight(50);
+        btn->setMinimumHeight(55);
+        QFont btnFont = btn->font();
+        btnFont.setPointSize(11);
+        btn->setFont(btnFont);
     }
     
     // Make combo boxes larger for touch
     QList<QComboBox*> combos = findChildren<QComboBox*>();
     for (QComboBox* combo : combos) {
-        combo->setMinimumHeight(50);
+        combo->setMinimumHeight(55);
+        QFont comboFont = combo->font();
+        comboFont.setPointSize(11);
+        combo->setFont(comboFont);
     }
     
-    // Hide menu bar on Android (use toolbar instead)
+    // Make checkboxes larger
+    QList<QCheckBox*> checkboxes = findChildren<QCheckBox*>();
+    for (QCheckBox* cb : checkboxes) {
+        cb->setMinimumHeight(50);
+        QFont cbFont = cb->font();
+        cbFont.setPointSize(11);
+        cb->setFont(cbFont);
+    }
+    
+    // Create toolbar to replace menu bar
+    QToolBar* toolbar = addToolBar("Main Toolbar");
+    toolbar->setMovable(false);
+    toolbar->setIconSize(QSize(32, 32));
+    toolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+    
+    // Add menu actions to toolbar
+    QAction* menuAction = toolbar->addAction("☰ Menu");
+    connect(menuAction, &QAction::triggered, this, [this]() {
+        QMenu menu(this);
+        menu.addMenu(ui->menuFile);
+        menu.addMenu(ui->menuView);
+        menu.addMenu(ui->menuLanguage);
+        menu.addMenu(ui->menuHelp);
+        menu.exec(QCursor::pos());
+    });
+    
+    // Hide traditional menu bar
     menuBar()->hide();
+    
+    // Adjust group box titles font
+    QList<QGroupBox*> groupBoxes = findChildren<QGroupBox*>();
+    for (QGroupBox* gb : groupBoxes) {
+        QFont gbFont = gb->font();
+        gbFont.setPointSize(12);
+        gbFont.setBold(true);
+        gb->setFont(gbFont);
+    }
 #else
     resize(1000, 700);
 #endif
