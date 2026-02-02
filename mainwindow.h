@@ -68,7 +68,7 @@ public:
         
         // Get text
         QString text = index.data(Qt::DisplayRole).toString();
-        QStringList lines = text.split(" - ", QString::SkipEmptyParts);
+        QStringList lines = text.split(" - ", Qt::SkipEmptyParts);
         
         // Set text color
         if (option.state & QStyle::State_Selected) {

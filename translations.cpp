@@ -28,7 +28,9 @@ QMap<QString, QString> Translations::loadFromFile(const QString &filename)
     }
     
     QSettings settings(filePath, QSettings::IniFormat);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     settings.setIniCodec("UTF-8");
+#endif
     
     // Load all groups and keys
     QStringList groups = settings.childGroups();

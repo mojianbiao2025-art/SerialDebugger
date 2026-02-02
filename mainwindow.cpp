@@ -13,7 +13,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QSplitter>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -745,13 +745,13 @@ void MainWindow::parseReceivedData(const QByteArray &data)
     
     // Check if data contains "plotter" keyword or numeric values
     if (dataStr.contains("plotter", Qt::CaseInsensitive) || 
-        dataStr.contains(QRegExp("[0-9\\-\\.]+"))) {
+        dataStr.contains(QRegularExpression("[0-9\\-\\.]+"))) {
         
         // Remove "plotter" keyword if present
         dataStr.remove("plotter", Qt::CaseInsensitive);
         
         // Extract numeric values
-        QStringList parts = dataStr.split(QRegExp("[,\\s]+"), QString::SkipEmptyParts);
+        QStringList parts = dataStr.split(QRegularExpression("[,\\s]+"), Qt::SkipEmptyParts);
         
         qint64 timestamp = QDateTime::currentMSecsSinceEpoch();
         int channelIndex = 0;
