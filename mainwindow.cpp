@@ -62,8 +62,14 @@ MainWindow::MainWindow(QWidget *parent)
     // Make the central widget scrollable
     QScrollArea* scrollArea = new QScrollArea(this);
     scrollArea->setWidgetResizable(true);
-    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scrollArea->setWidget(ui->centralwidget);
+    
+    // Ensure the central widget has proper size
+    ui->centralwidget->setMinimumWidth(800);
+    ui->centralwidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    
     setCentralWidget(scrollArea);
     
     // Get references to original widgets from UI
@@ -673,6 +679,20 @@ void MainWindow::on_actionFrench_triggered()
 void MainWindow::switchLanguage(const QString &language)
 {
     currentLanguage = language;
+    
+    // Update the checked state of language actions
+    if (language == "en") {
+        ui->actionEnglish->setChecked(true);
+    } else if (language == "zh") {
+        ui->actionChinese->setChecked(true);
+    } else if (language == "ja") {
+        ui->actionJapanese->setChecked(true);
+    } else if (language == "de") {
+        ui->actionGerman->setChecked(true);
+    } else if (language == "fr") {
+        ui->actionFrench->setChecked(true);
+    }
+    
     retranslateUI();
 }
 
@@ -853,6 +873,13 @@ void MainWindow::setupAdvancedUI()
     
     // Set minimum size for tab bar to ensure text is visible
     mainTabWidget->tabBar()->setMinimumHeight(45);
+    
+    // Force black text color for tabs to ensure visibility
+    mainTabWidget->tabBar()->setStyleSheet(
+        "QTabBar::tab { color: #000000; }"
+        "QTabBar::tab:selected { color: #000000; }"
+        "QTabBar::tab:hover { color: #000000; }"
+    );
     
     setCentralWidget(mainTabWidget);
     

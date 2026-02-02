@@ -434,7 +434,7 @@ QTabWidget::pane {
 QTabBar::tab {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                 stop: 0 #f0f0f0, stop: 1 #e0e0e0);
-    color: #2c3e50;
+    color: #000000;
     border: 2px solid #bdc3c7;
     border-bottom: none;
     border-top-left-radius: 8px;
@@ -451,7 +451,7 @@ QTabBar::tab {
 QTabBar::tab:selected {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                 stop: 0 #ffffff, stop: 1 #f8f8f8);
-    color: #3498db;
+    color: #000000;
     border-color: #3498db;
     border-bottom: 2px solid white;
     margin-bottom: -2px;
@@ -462,7 +462,7 @@ QTabBar::tab:selected {
 QTabBar::tab:hover:!selected {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                 stop: 0 #e8e8e8, stop: 1 #d8d8d8);
-    color: #2980b9;
+    color: #000000;
     border-color: #95a5a6;
 }
 

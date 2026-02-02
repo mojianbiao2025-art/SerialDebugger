@@ -224,8 +224,8 @@ jobs:
         cd $HOME
         git clone https://github.com/emscripten-core/emsdk.git
         cd emsdk
-        ./emsdk install 2.0.25
-        ./emsdk activate 2.0.25
+        ./emsdk install 1.39.8
+        ./emsdk activate 1.39.8
         
     - name: Install Qt for WebAssembly
       run: |
