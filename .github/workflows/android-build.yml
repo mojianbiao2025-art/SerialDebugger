@@ -71,8 +71,9 @@ jobs:
         yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
         $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3" "ndk;25.1.8937393"
         
-        # Set NDK environment
+        # Set NDK and build tools environment
         echo "ANDROID_NDK_ROOT=$HOME/android-sdk/ndk/25.1.8937393" >> $GITHUB_ENV
+        echo "ANDROID_SDK_BUILD_TOOLS_REVISION=30.0.3" >> $GITHUB_ENV
         
     - name: Create build directory
       run: mkdir build-android
