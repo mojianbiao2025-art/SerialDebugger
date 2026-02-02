@@ -38,23 +38,7 @@ endif()
 
 # Find Qt libraries
 if(EMSCRIPTEN)
-    # For WebAssembly, only require Core, Gui, Widgets
     find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
-    
-    # Try to find optional modules but don't fail if missing
-    find_package(Qt5Svg QUIET)
-    find_package(Qt5Network QUIET)
-    
-    # Create dummy targets for missing modules to satisfy Qt plugin dependencies
-    if(NOT TARGET Qt5::Svg)
-        add_library(Qt5::Svg INTERFACE IMPORTED)
-        message(STATUS "Created dummy Qt5::Svg target")
-    endif()
-    
-    if(NOT TARGET Qt5::Network)
-        add_library(Qt5::Network INTERFACE IMPORTED)
-        message(STATUS "Created dummy Qt5::Network target")
-    endif()
 else()
     find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets SerialPort)
 endif()

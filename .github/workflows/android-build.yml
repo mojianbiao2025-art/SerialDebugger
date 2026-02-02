@@ -1,10 +1,7 @@
-name: Build Android APK
+name: Build Android APK (Manual Only)
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+  # 禁用自动触发，仅保留手动触发
   workflow_dispatch:
 
 jobs:
