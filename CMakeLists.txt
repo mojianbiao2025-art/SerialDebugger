@@ -108,7 +108,7 @@ endif()
 
 # Link Qt libraries
 if(EMSCRIPTEN)
-    target_link_libraries(${PROJECT_NAME}
+    target_link_libraries(${PROJECT_NAME} PRIVATE
         Qt${QT_VERSION_MAJOR}::Core
         Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::Widgets
@@ -118,7 +118,7 @@ if(EMSCRIPTEN)
         LINK_FLAGS "-s USE_WEBGL2=1 -s FULL_ES3=1 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap'] --bind"
     )
 else()
-    target_link_libraries(${PROJECT_NAME}
+    target_link_libraries(${PROJECT_NAME} PRIVATE
         Qt${QT_VERSION_MAJOR}::Core
         Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::Widgets
@@ -127,7 +127,7 @@ else()
     
     # Android specific: link zlib
     if(ANDROID)
-        target_link_libraries(${PROJECT_NAME} z)
+        target_link_libraries(${PROJECT_NAME} PRIVATE z)
     endif()
 endif()
 
