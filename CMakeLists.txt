@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 project(SerialDebugger VERSION 1.0.0 LANGUAGES CXX)
 
@@ -13,13 +13,17 @@ if(EMSCRIPTEN)
             "$ENV{QT_ROOT}/lib/cmake/Qt5Core"
             "$ENV{QT_ROOT}/lib/cmake/Qt5Gui"
             "$ENV{QT_ROOT}/lib/cmake/Qt5Widgets"
+            "$ENV{QT_ROOT}/lib/cmake/Qt6"
+            "$ENV{QT_ROOT}/lib/cmake/Qt6Core"
+            "$ENV{QT_ROOT}/lib/cmake/Qt6Gui"
+            "$ENV{QT_ROOT}/lib/cmake/Qt6Widgets"
         )
         message(STATUS "Using Qt from: $ENV{QT_ROOT}")
         message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
     endif()
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_AUTOMOC ON)
@@ -36,12 +40,26 @@ if(MSVC)
     add_compile_options(/utf-8)
 endif()
 
-# Find Qt libraries
+# Try to find Qt6 first, fall back to Qt5
 if(EMSCRIPTEN)
-    find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+    find_package(Qt6 QUIET COMPONENTS Core Gui Widgets)
+    if(NOT Qt6_FOUND)
+        find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+        set(QT_VERSION_MAJOR 5)
+    else()
+        set(QT_VERSION_MAJOR 6)
+    endif()
 else()
-    find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets SerialPort)
+    find_package(Qt6 QUIET COMPONENTS Core Gui Widgets SerialPort)
+    if(NOT Qt6_FOUND)
+        find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets SerialPort)
+        set(QT_VERSION_MAJOR 5)
+    else()
+        set(QT_VERSION_MAJOR 6)
+    endif()
 endif()
+
+message(STATUS "Using Qt${QT_VERSION_MAJOR}")
 
 # Source files
 set(PROJECT_SOURCES
@@ -79,9 +97,9 @@ endif()
 # Link Qt libraries
 if(EMSCRIPTEN)
     target_link_libraries(${PROJECT_NAME}
-        Qt5::Core
-        Qt5::Gui
-        Qt5::Widgets
+        Qt${QT_VERSION_MAJOR}::Core
+        Qt${QT_VERSION_MAJOR}::Gui
+        Qt${QT_VERSION_MAJOR}::Widgets
     )
     # WebAssembly specific settings
     set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -89,10 +107,10 @@ if(EMSCRIPTEN)
     )
 else()
     target_link_libraries(${PROJECT_NAME}
-        Qt5::Core
-        Qt5::Gui
-        Qt5::Widgets
-        Qt5::SerialPort
+        Qt${QT_VERSION_MAJOR}::Core
+        Qt${QT_VERSION_MAJOR}::Gui
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::SerialPort
     )
 endif()
 
