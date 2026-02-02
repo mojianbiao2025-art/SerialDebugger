@@ -115,7 +115,7 @@ if(EMSCRIPTEN)
     )
     # WebAssembly specific settings - minimal flags for stability
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -lembind"
+        LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 --bind"
     )
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE

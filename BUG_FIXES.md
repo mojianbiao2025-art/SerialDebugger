@@ -11,11 +11,13 @@ error: undefined symbol: _embind_register_function
 error: undefined symbol: _emval_as
 error: undefined symbol: _emval_call
 ...
+wasm-ld: error: unable to find library -lembind
 ```
 
 **修复方案：**
-- 在CMakeLists.txt中为WebAssembly目标添加 `-lembind` 链接标志
-- 这是因为webserialport.cpp使用了Emscripten的embind库来与JavaScript交互
+- 在CMakeLists.txt中为WebAssembly目标添加 `--bind` 链接标志（不是 `-lembind`）
+- `--bind` 是Emscripten的正确标志，用于启用embind库支持
+- embind库用于webserialport.cpp与JavaScript的互操作
 
 **修改文件：**
 - `CMakeLists.txt` - 第 122 行
@@ -88,7 +90,17 @@ Emscripten的embind库用于在C++和JavaScript之间进行互操作。`webseria
 - 处理JavaScript回调
 - 在C++和JavaScript之间传递数据
 
-链接时必须包含 `-lembind` 标志，否则会出现未定义符号错误。
+链接时必须包含 `--bind` 标志（不是 `-lembind`），这是Emscripten的正确语法。`--bind` 会自动链接embind库并启用相关功能。
+
+**正确的链接标志：**
+```cmake
+LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 --bind"
+```
+
+**错误的写法：**
+```cmake
+LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -lembind"  # 错误！
+```
 
 ### Tab标签颜色问题的根本原因
 原始样式表中：
