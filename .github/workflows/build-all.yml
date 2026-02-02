@@ -48,11 +48,18 @@ jobs:
         echo "CMAKE_PREFIX_PATH=$QT_ANDROID_PATH" >> $GITHUB_ENV
         echo "$QT_ANDROID_PATH/bin" >> $GITHUB_PATH
         
+        echo "=== Qt Installation Verification ==="
         echo "Qt host installed at: $QT_HOST_PATH"
         echo "Qt Android installed at: $QT_ANDROID_PATH"
         
-        # Verify SerialPort module
-        ls -la $QT_ANDROID_PATH/lib/cmake/ | grep -i serial || echo "SerialPort module check"
+        echo "=== Checking Qt6 cmake files ==="
+        ls -la $QT_ANDROID_PATH/lib/cmake/ | head -20
+        
+        echo "=== Checking Qt6 Config ==="
+        ls -la $QT_ANDROID_PATH/lib/cmake/Qt6/ | head -10
+        
+        echo "=== Checking Qt6SerialPort ==="
+        ls -la $QT_ANDROID_PATH/lib/cmake/Qt6SerialPort/ || echo "Qt6SerialPort not found"
         
     - name: Install Android SDK and NDK
       run: |
@@ -79,15 +86,10 @@ jobs:
     - name: Configure CMake
       working-directory: build-android
       run: |
-        echo "=== Environment Variables ==="
+        echo "=== CMake Configuration Starting ==="
         echo "CMAKE_PREFIX_PATH: $CMAKE_PREFIX_PATH"
         echo "QT_HOST_PATH: $QT_HOST_PATH"
         echo "Qt6_DIR: $Qt6_DIR"
-        
-        echo "=== Qt Installation Check ==="
-        ls -la $CMAKE_PREFIX_PATH/lib/cmake/ || echo "cmake dir not found"
-        ls -la $CMAKE_PREFIX_PATH/lib/cmake/Qt6/ || echo "Qt6 cmake dir not found"
-        ls -la $CMAKE_PREFIX_PATH/lib/cmake/Qt6SerialPort/ || echo "Qt6SerialPort cmake dir not found"
         
         cmake .. \
           -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
