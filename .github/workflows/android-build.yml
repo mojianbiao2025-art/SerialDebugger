@@ -24,8 +24,8 @@ jobs:
         sudo apt-get install -y python3-pip
         pip3 install aqtinstall==3.1.*
         
-        # Install Qt 5.15.2 for Android
-        python3 -m aqt install-qt linux android 5.15.2 android_arm64_v8a -m qtserialport
+        # Install Qt 5.15.2 for Android (qtserialport is included in base)
+        python3 -m aqt install-qt linux android 5.15.2 android_arm64_v8a
         
         # Set Qt environment
         echo "Qt5_DIR=$PWD/5.15.2/android_arm64_v8a" >> $GITHUB_ENV
