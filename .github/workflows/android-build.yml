@@ -104,8 +104,16 @@ jobs:
     - name: Build
       working-directory: build-android
       run: |
-        # Build the shared library only, don't create APK yet
+        # Build the shared library and prepare APK directory
         cmake --build . --config Release --target SerialDebugger -j$(nproc)
+        cmake --build . --config Release --target SerialDebugger_prepare_apk_dir
+        
+        echo "=== Checking build output ==="
+        ls -la
+        echo "=== Checking for .so file ==="
+        find . -name "*.so" -type f
+        echo "=== Checking android-build directory ==="
+        ls -la android-build/libs/arm64-v8a/ || echo "Directory not found yet"
       
     - name: Create APK with androiddeployqt
       working-directory: build-android
