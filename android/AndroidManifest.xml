@@ -30,16 +30,6 @@
             
             <meta-data android:name="android.app.lib_name"
                        android:value="SerialDebugger"/>
-            <meta-data android:name="android.app.qt_sources_resource_id"
-                       android:resource="@array/qt_sources"/>
-            <meta-data android:name="android.app.repository"
-                       android:value="default"/>
-            <meta-data android:name="android.app.qt_libs_resource_id"
-                       android:resource="@array/qt_libs"/>
-            <meta-data android:name="android.app.bundled_libs_resource_id"
-                       android:resource="@array/bundled_libs"/>
-            <meta-data android:name="android.app.extract_android_style"
-                       android:value="minimal"/>
         </activity>
     </application>
     
