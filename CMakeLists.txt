@@ -97,7 +97,10 @@ if(WIN32)
 endif()
 
 # Create executable
-if(WIN32)
+if(ANDROID AND QT_VERSION_MAJOR EQUAL 6)
+    # Qt6 Android requires qt_add_executable
+    qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+elseif(WIN32)
     add_executable(${PROJECT_NAME} WIN32 ${PROJECT_SOURCES})
 else()
     add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
@@ -146,11 +149,8 @@ if(ANDROID AND QT_VERSION_MAJOR EQUAL 6)
         QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/android
     )
     
-    # Generate Android deployment settings
-    qt_android_generate_deployment_settings(${PROJECT_NAME})
-    
-    # Finalize the APK
-    qt_android_add_apk_target(${PROJECT_NAME})
+    # Finalize the Android executable (generates deployment settings automatically)
+    qt_finalize_target(${PROJECT_NAME})
 endif()
 
 # Install rules
