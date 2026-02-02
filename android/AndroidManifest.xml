@@ -6,15 +6,16 @@
           android:installLocation="auto">
     
     <application android:hardwareAccelerated="true" 
-                 android:name="org.qtproject.qt5.android.bindings.QtApplication" 
+                 android:name="org.qtproject.qt.android.bindings.QtApplication" 
                  android:label="串口调试助手"
                  android:icon="@drawable/icon">
         
         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation"
-                  android:name="org.qtproject.qt5.android.bindings.QtActivity"
+                  android:name="org.qtproject.qt.android.bindings.QtActivity"
                   android:label="串口调试助手"
                   android:screenOrientation="unspecified"
-                  android:launchMode="singleTop">
+                  android:launchMode="singleTop"
+                  android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

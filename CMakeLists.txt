@@ -140,6 +140,19 @@ if(WIN32)
     )
 endif()
 
+# Android specific configuration for Qt6
+if(ANDROID AND QT_VERSION_MAJOR EQUAL 6)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/android
+    )
+    
+    # Generate Android deployment settings
+    qt_android_generate_deployment_settings(${PROJECT_NAME})
+    
+    # Finalize the APK
+    qt_android_add_apk_target(${PROJECT_NAME})
+endif()
+
 # Install rules
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION bin
