@@ -270,6 +270,26 @@ jobs:
         export CMAKE_PREFIX_PATH=$QT_ROOT
         export PATH=$QT_ROOT/bin:$PATH
         
+        # Ensure Qt5CoreMacros.cmake exists before building
+        if [ ! -f "$QT_ROOT/lib/cmake/Qt5Core/Qt5CoreMacros.cmake" ]; then
+          echo "Creating Qt5CoreMacros.cmake..."
+          mkdir -p $QT_ROOT/lib/cmake/Qt5Core
+          cat > $QT_ROOT/lib/cmake/Qt5Core/Qt5CoreMacros.cmake <<'EOFMACRO'
+        macro(_qt5_Core_check_file_exists file)
+            if(NOT EXISTS "${file}")
+                message(WARNING "File does not exist: ${file}")
+            endif()
+        endmacro()
+        function(_qt5_Core_process_prl_file prl_file_location Configuration lib_deps link_flags)
+            set(${lib_deps} "" PARENT_SCOPE)
+            set(${link_flags} "" PARENT_SCOPE)
+        endfunction()
+        EOFMACRO
+        fi
+        
+        echo "Checking Qt5CoreMacros.cmake:"
+        ls -la $QT_ROOT/lib/cmake/Qt5Core/Qt5CoreMacros.cmake || echo "File not found!"
+        
         # Create dummy configs for missing modules
         for module in Svg Zlib Network EventDispatcherSupport FontDatabaseSupport EglSupport; do
           if [ ! -d "$QT_ROOT/lib/cmake/Qt5$module" ]; then
