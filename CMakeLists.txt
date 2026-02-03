@@ -118,7 +118,7 @@ if(EMSCRIPTEN)
         )
         # Qt 5 WebAssembly settings - Disable features that cause embind issues
         set_target_properties(${PROJECT_NAME} PROPERTIES
-            LINK_FLAGS "--bind -s EXPORTED_FUNCTIONS=['_main','_malloc','_free'] -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','stringToUTF8'] -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s EXPORT_NAME='createQtAppInstance' -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=1 -s ERROR_ON_UNDEFINED_SYMBOLS=0"
+            LINK_FLAGS "--bind -s EXPORTED_FUNCTIONS=[_main,_malloc,_free] -s EXPORTED_RUNTIME_METHODS=[ccall,cwrap,UTF8ToString,stringToUTF8,getValue,setValue] -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s EXPORT_NAME=createQtAppInstance -s DISABLE_EXCEPTION_CATCHING=0 -s ASSERTIONS=1 -s ERROR_ON_UNDEFINED_SYMBOLS=0"
         )
         # Disable Qt features that use embind/localStorage
         target_compile_definitions(${PROJECT_NAME} PRIVATE
