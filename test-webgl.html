@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>WebGL 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .success {
+            background: #e8f5e9;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4caf50;
+        }
+        .error {
+            background: #ffebee;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #f44336;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #2196f3;
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+            margin: 20px auto;
+        }
+        pre {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 WebGL 支持测试</h1>
+        
+        <div id="result"></div>
+        
+        <h2>测试 Canvas</h2>
+        <canvas id="testCanvas" width="400" height="300"></canvas>
+        
+        <h2>详细信息</h2>
+        <pre id="details"></pre>
+        
+        <div class="info">
+            <strong>说明：</strong><br>
+            - 如果看到绿色背景，说明 WebGL 可用<br>
+            - 如果看到红色错误，说明 WebGL 不可用<br>
+            - Qt WebAssembly 需要 WebGL 才能渲染界面
+        </div>
+    </div>
+
+    <script>
+        var details = [];
+        
+        function addDetail(text) {
+            details.push(text);
+            document.getElementById('details').textContent = details.join('\n');
+        }
+
+        function testWebGL() {
+            var canvas = document.getElementById('testCanvas');
+            var resultDiv = document.getElementById('result');
+            
+            addDetail('浏览器: ' + navigator.userAgent);
+            addDetail('');
+            
+            // Test WebGL 1.0
+            addDetail('=== 测试 WebGL 1.0 ===');
+            var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            
+            if (gl) {
+                resultDiv.innerHTML = '<div class="success"><strong>✓ WebGL 可用！</strong><br>您的浏览器支持 WebGL，Qt 应用应该可以正常渲染。</div>';
+                
+                addDetail('WebGL 1.0: 可用 ✓');
+                addDetail('版本: ' + gl.getParameter(gl.VERSION));
+                addDetail('供应商: ' + gl.getParameter(gl.VENDOR));
+                addDetail('渲染器: ' + gl.getParameter(gl.RENDERER));
+                addDetail('着色器语言版本: ' + gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
+                
+                // Draw a green triangle to test rendering
+                gl.clearColor(0.0, 1.0, 0.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                
+                addDetail('');
+                addDetail('Canvas 已清屏为绿色');
+                
+                // Test WebGL 2.0
+                addDetail('');
+                addDetail('=== 测试 WebGL 2.0 ===');
+                var gl2 = canvas.getContext('webgl2');
+                if (gl2) {
+                    addDetail('WebGL 2.0: 可用 ✓');
+                    addDetail('版本: ' + gl2.getParameter(gl2.VERSION));
+                } else {
+                    addDetail('WebGL 2.0: 不可用 (但 WebGL 1.0 足够)');
+                }
+                
+                // Test extensions
+                addDetail('');
+                addDetail('=== 可用的扩展 ===');
+                var extensions = gl.getSupportedExtensions();
+                if (extensions && extensions.length > 0) {
+                    addDetail('扩展数量: ' + extensions.length);
+                    extensions.slice(0, 10).forEach(function(ext) {
+                        addDetail('  - ' + ext);
+                    });
+                    if (extensions.length > 10) {
+                        addDetail('  ... 还有 ' + (extensions.length - 10) + ' 个扩展');
+                    }
+                } else {
+                    addDetail('没有可用的扩展');
+                }
+                
+            } else {
+                resultDiv.innerHTML = '<div class="error"><strong>✗ WebGL 不可用！</strong><br>您的浏览器不支持 WebGL，或者 WebGL 被禁用了。<br><br><strong>解决方案：</strong><br>1. 启用硬件加速：设置 → 系统 → 硬件加速<br>2. 启用 WebGL：访问 chrome://flags 搜索 WebGL<br>3. 更新显卡驱动<br>4. 访问 chrome://gpu 查看详细状态</div>';
+                
+                addDetail('WebGL 1.0: 不可用 ✗');
+                addDetail('');
+                addDetail('可能的原因：');
+                addDetail('1. 硬件加速被禁用');
+                addDetail('2. WebGL 在浏览器设置中被禁用');
+                addDetail('3. 显卡驱动过旧或不兼容');
+                addDetail('4. 浏览器安全策略阻止');
+                addDetail('');
+                addDetail('请访问以下链接检查：');
+                addDetail('- chrome://gpu (查看 GPU 状态)');
+                addDetail('- chrome://flags (搜索 WebGL)');
+                addDetail('- https://get.webgl.org/ (官方测试)');
+                
+                // Try to get more info
+                var debugInfo = gl ? gl.getExtension('WEBGL_debug_renderer_info') : null;
+                if (debugInfo) {
+                    addDetail('');
+                    addDetail('调试信息：');
+                    addDetail('供应商: ' + gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL));
+                    addDetail('渲染器: ' + gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
+                }
+            }
+        }
+
+        // Run test
+        testWebGL();
+    </script>
+</body>
+</html>

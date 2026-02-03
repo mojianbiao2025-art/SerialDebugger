@@ -131,24 +131,10 @@
             log('Display: ' + window.getComputedStyle(canvas).display);
             log('Visibility: ' + window.getComputedStyle(canvas).visibility);
             
-            // Check canvas content
-            var ctx = canvas.getContext('2d');
-            if (ctx) {
-                log('2D Context: 可用');
-                var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                var hasContent = false;
-                for (var i = 0; i < imageData.data.length; i += 4) {
-                    if (imageData.data[i+3] > 0) {
-                        hasContent = true;
-                        break;
-                    }
-                }
-                log('Canvas 内容: ' + (hasContent ? '有像素数据' : '完全透明/空白'));
-            }
-            
-            // Check WebGL
-            var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-            log('WebGL Context: ' + (gl ? '可用' : '不可用'));
+            // WARNING: Getting 2D context will prevent WebGL context!
+            // Only check if explicitly requested
+            log('⚠️ 注意：检查 2D/WebGL 上下文会干扰 Qt 渲染');
+            log('如果需要检查上下文，请在 Qt 加载前进行');
         }
 
         function checkModule() {

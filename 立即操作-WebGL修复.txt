@@ -1,0 +1,222 @@
+========================================
+立即操作 - WebGL 修复指南
+========================================
+
+问题确认：
+Qt WebAssembly 需要 WebGL 才能渲染，但 WebGL 上下文无法获取。
+
+========================================
+第一步：测试浏览器 WebGL 支持
+========================================
+
+⚠️ 重要：先做这一步，不要加载 Qt 应用！
+
+访问（在新标签页打开）：
+https://mojianbiao2025-art.github.io/SerialDebugger/test-webgl.html
+
+预期结果：
+✅ 看到绿色背景 = WebGL 可用，继续第二步
+❌ 看到红色错误 = WebGL 不可用，继续下面的修复
+
+========================================
+如果 WebGL 不可用，执行以下修复：
+========================================
+
+修复 A：启用硬件加速
+------------------------
+1. 打开浏览器设置
+   Chrome: chrome://settings/system
+   Edge: edge://settings/system
+
+2. 找到"使用硬件加速（如果可用）"
+
+3. 确保已启用（开关打开）
+
+4. 重启浏览器
+
+5. 重新测试 test-webgl.html
+
+
+修复 B：启用 WebGL 标志
+------------------------
+1. 访问：chrome://flags 或 edge://flags
+
+2. 搜索"WebGL"
+
+3. 设置以下选项为 Enabled：
+   - WebGL
+   - WebGL 2.0
+   - Override software rendering list
+
+4. 点击"Relaunch"重启浏览器
+
+5. 重新测试 test-webgl.html
+
+
+修复 C：检查 GPU 状态
+------------------------
+1. 访问：chrome://gpu 或 edge://gpu
+
+2. 查找"Graphics Feature Status"部分
+
+3. 确认：
+   WebGL: Hardware accelerated ✅
+   WebGL2: Hardware accelerated ✅
+
+4. 如果显示"Disabled"或"Software only"：
+   - 更新显卡驱动
+   - 重启电脑
+   - 重新测试
+
+
+修复 D：官方 WebGL 测试
+------------------------
+访问：https://get.webgl.org/
+
+应该看到一个旋转的立方体。
+如果看不到，说明 WebGL 确实不可用。
+
+========================================
+第二步：提交代码修复
+========================================
+
+我已经修改了以下文件：
+✅ CMakeLists.txt - 添加 WebGL 支持标志
+✅ test-webgl.html - WebGL 测试页面
+✅ test-qt-render.html - 修复诊断工具
+✅ .github/workflows/*.yml - 更新部署
+
+提交方法：
+
+方法 1：使用批处理脚本
+双击运行：commit_wasm_fix.bat
+
+方法 2：手动提交
+git add CMakeLists.txt test-webgl.html test-qt-render.html
+git add .github/workflows/*.yml WebGL问题解决方案.md
+git commit -m "Enable WebGL support for Qt rendering"
+git push
+
+========================================
+第三步：等待构建完成
+========================================
+
+1. 访问：https://github.com/mojianbiao2025-art/SerialDebugger/actions
+
+2. 等待绿色勾号（约 10-15 分钟）
+
+3. 如果构建失败，查看错误日志
+
+========================================
+第四步：测试修复后的应用
+========================================
+
+1. 清除浏览器缓存
+   Ctrl+Shift+Delete
+   选择"缓存的图片和文件"
+   点击"清除数据"
+
+2. 访问主应用（硬刷新）
+   https://mojianbiao2025-art.github.io/SerialDebugger/index.html
+   按 Ctrl+F5 强制刷新
+
+3. 预期结果：
+   ✅ 看到 Qt 应用界面
+   ✅ 菜单栏可见
+   ✅ Main 和 Plotter 标签页可见
+   ✅ 串口设置区域可见
+   ✅ 所有控件正常显示
+
+========================================
+故障排除
+========================================
+
+问题 1：test-webgl.html 显示红色错误
+解决：按照页面上的说明启用 WebGL
+
+问题 2：test-webgl.html 显示绿色，但 Qt 应用仍空白
+解决：
+- 确认 GitHub Actions 构建成功
+- 清除浏览器缓存
+- 硬刷新页面（Ctrl+F5）
+- 等待几分钟让 CDN 更新
+
+问题 3：构建失败
+解决：
+- 查看 GitHub Actions 错误日志
+- 检查 CMakeLists.txt 语法
+- 可能需要调整 Emscripten 标志
+
+========================================
+关键修改说明
+========================================
+
+CMakeLists.txt 中添加的 WebGL 标志：
+
+-s FULL_ES2=1
+  启用完整的 OpenGL ES 2.0 支持
+  Qt 使用 OpenGL ES 2.0 渲染
+
+-s USE_WEBGL2=1
+  优先使用 WebGL 2.0（如果可用）
+  提供更好的性能
+
+-s MAX_WEBGL_VERSION=2
+  允许使用 WebGL 2.0
+
+-s MIN_WEBGL_VERSION=1
+  如果 WebGL 2.0 不可用，回退到 WebGL 1.0
+
+========================================
+测试页面链接
+========================================
+
+WebGL 测试（先测试这个）：
+https://mojianbiao2025-art.github.io/SerialDebugger/test-webgl.html
+
+主应用（修复后测试）：
+https://mojianbiao2025-art.github.io/SerialDebugger/index.html
+
+加载诊断：
+https://mojianbiao2025-art.github.io/SerialDebugger/test-wasm-loading.html
+
+渲染诊断：
+https://mojianbiao2025-art.github.io/SerialDebugger/test-qt-render.html
+
+========================================
+预期时间线
+========================================
+
+1. 测试 WebGL：立即（1 分钟）
+2. 启用 WebGL（如果需要）：5 分钟
+3. 提交代码：1 分钟
+4. 等待构建：10-15 分钟
+5. 测试应用：2 分钟
+
+总计：约 20-25 分钟
+
+========================================
+成功标志
+========================================
+
+✅ test-webgl.html 显示绿色背景
+✅ 详细信息显示"WebGL 1.0: 可用"
+✅ GitHub Actions 构建成功（绿色勾号）
+✅ index.html 显示 Qt 应用界面
+✅ 可以看到菜单、按钮、文本框
+✅ 界面响应鼠标操作
+
+========================================
+需要帮助？
+========================================
+
+如果问题仍然存在，请提供：
+
+1. test-webgl.html 的截图
+2. chrome://gpu 的输出
+3. 浏览器控制台（F12）的错误信息
+4. 您的操作系统和显卡型号
+
+作者：莫建标
+公司：上海大族富创得股份有限公司
+更新时间：2025-02-03

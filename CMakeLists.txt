@@ -113,9 +113,9 @@ if(EMSCRIPTEN)
         Qt${QT_VERSION_MAJOR}::Gui
         Qt${QT_VERSION_MAJOR}::Widgets
     )
-    # WebAssembly specific settings - minimal flags for stability
+    # WebAssembly specific settings - enable WebGL and filesystem
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 --bind -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','allocateUTF8'] -s EXPORTED_FUNCTIONS=['_malloc','_free','_webserial_onOpened_c','_webserial_onError_c','_webserial_onDataReceived_c'] -s FORCE_FILESYSTEM=1 -s FETCH=1"
+        LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 --bind -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','allocateUTF8'] -s EXPORTED_FUNCTIONS=['_malloc','_free','_webserial_onOpened_c','_webserial_onError_c','_webserial_onDataReceived_c'] -s FORCE_FILESYSTEM=1 -s FETCH=1 -s FULL_ES2=1 -s USE_WEBGL2=1 -s MAX_WEBGL_VERSION=2 -s MIN_WEBGL_VERSION=1"
     )
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE
