@@ -312,6 +312,7 @@ jobs:
         mkdir -p deploy
         cp build-wasm/bin/SerialDebugger.* deploy/
         cp index.html deploy/
+        cp index-simple.html deploy/
         cp test-minimal.html deploy/
         cp diagnose.html deploy/
         cp test-wasm-loading.html deploy/
@@ -319,6 +320,23 @@ jobs:
         cp test-webgl.html deploy/
         cp lang_*.ini deploy/
         cp styles.qss deploy/
+        
+        # Create a README for the deployment
+        echo "SerialDebugger WebAssembly Deployment" > deploy/README.txt
+        echo "" >> deploy/README.txt
+        echo "Available pages:" >> deploy/README.txt
+        echo "1. index.html - Main application page" >> deploy/README.txt
+        echo "2. index-simple.html - Simplified loading page (recommended)" >> deploy/README.txt
+        echo "3. test-minimal.html - Minimal test page" >> deploy/README.txt
+        echo "4. diagnose.html - Diagnostic tool" >> deploy/README.txt
+        echo "" >> deploy/README.txt
+        echo "If the application doesn't load:" >> deploy/README.txt
+        echo "1. Try index-simple.html first" >> deploy/README.txt
+        echo "2. Use diagnose.html to check file sizes" >> deploy/README.txt
+        echo "3. Clear browser cache (Ctrl+Shift+Delete)" >> deploy/README.txt
+        echo "4. Force refresh (Ctrl+F5)" >> deploy/README.txt
+        echo "" >> deploy/README.txt
+        echo "File sizes:" >> deploy/README.txt
         
         echo "=== Deployment files ==="
         ls -lh deploy/
@@ -328,11 +346,18 @@ jobs:
         echo "=== Checking .wasm file size ==="
         WASM_SIZE=$(stat -f%z deploy/SerialDebugger.wasm 2>/dev/null || stat -c%s deploy/SerialDebugger.wasm 2>/dev/null || echo "0")
         echo "SerialDebugger.wasm size: $WASM_SIZE bytes"
+        echo "SerialDebugger.wasm: $WASM_SIZE bytes" >> deploy/README.txt
+        
         if [ "$WASM_SIZE" -lt 1000000 ]; then
           echo "WARNING: .wasm file is too small ($WASM_SIZE bytes)!"
+          echo "WARNING: File too small!" >> deploy/README.txt
         else
           echo "✓ .wasm file size looks good"
+          echo "✓ File size OK" >> deploy/README.txt
         fi
+        
+        JS_SIZE=$(stat -f%z deploy/SerialDebugger.js 2>/dev/null || stat -c%s deploy/SerialDebugger.js 2>/dev/null || echo "0")
+        echo "SerialDebugger.js: $JS_SIZE bytes" >> deploy/README.txt
         
     - name: Upload WebAssembly build
       uses: actions/upload-artifact@v4
