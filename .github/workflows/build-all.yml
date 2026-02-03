@@ -270,12 +270,9 @@ jobs:
         export CMAKE_PREFIX_PATH=$QT_ROOT
         export PATH=$QT_ROOT/bin:$PATH
         
-        # Fix Qt5Config.cmake to include Qt5CoreMacros.cmake before using it
-        echo "Patching Qt5Config.cmake..."
-        sed -i '1i include(${CMAKE_CURRENT_LIST_DIR}/../Qt5Core/Qt5CoreMacros.cmake)' $QT_ROOT/lib/cmake/Qt5/Qt5Config.cmake
-        
-        echo "Checking Qt5CoreMacros.cmake:"
-        ls -la $QT_ROOT/lib/cmake/Qt5Core/Qt5CoreMacros.cmake || echo "File not found!"
+        # Check Qt5Core structure
+        echo "=== Checking Qt5Core cmake files ==="
+        ls -la $QT_ROOT/lib/cmake/Qt5Core/ | head -20
         
         # Create dummy configs for missing modules
         for module in Svg Zlib Network EventDispatcherSupport FontDatabaseSupport EglSupport; do
@@ -297,6 +294,15 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_PREFIX_PATH="$QT_ROOT;$QT_ROOT/lib/cmake" \
           -DQt5_DIR="$QT_ROOT/lib/cmake/Qt5" \
+          -DQt5Core_DIR="$QT_ROOT/lib/cmake/Qt5Core" \
+          -DQt5Gui_DIR="$QT_ROOT/lib/cmake/Qt5Gui" \
+          -DQt5Widgets_DIR="$QT_ROOT/lib/cmake/Qt5Widgets" \
+          -DQt5Svg_DIR="$QT_ROOT/lib/cmake/Qt5Svg" \
+          -DQt5Zlib_DIR="$QT_ROOT/lib/cmake/Qt5Zlib" \
+          -DQt5Network_DIR="$QT_ROOT/lib/cmake/Qt5Network" \
+          -DQt5EventDispatcherSupport_DIR="$QT_ROOT/lib/cmake/Qt5EventDispatcherSupport" \
+          -DQt5FontDatabaseSupport_DIR="$QT_ROOT/lib/cmake/Qt5FontDatabaseSupport" \
+          -DQt5EglSupport_DIR="$QT_ROOT/lib/cmake/Qt5EglSupport" \
           -G Ninja
           
         cmake --build . --config Release -j2
