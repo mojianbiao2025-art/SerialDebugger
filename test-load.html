@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>加载测试</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #000; color: #0f0; }
+        .log { margin: 5px 0; }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+        .warning { color: #ff0; }
+    </style>
+</head>
+<body>
+    <h1>SerialDebugger 加载测试</h1>
+    <div id="log"></div>
+    
+    <script>
+        function log(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+            document.getElementById('log').appendChild(div);
+            console.log(msg);
+        }
+
+        log('开始测试...', 'info');
+        
+        // 测试 1: 检查 SerialDebugger.js 是否存在
+        log('测试 1: 检查 SerialDebugger.js', 'info');
+        fetch('SerialDebugger.js', { method: 'HEAD' })
+            .then(response => {
+                if (response.ok) {
+                    const size = response.headers.get('content-length');
+                    log('✓ SerialDebugger.js 存在，大小: ' + (size ? (size/1024).toFixed(2) + ' KB' : '未知'), 'success');
+                } else {
+                    log('✗ SerialDebugger.js 不存在 (HTTP ' + response.status + ')', 'error');
+                }
+            })
+            .catch(err => log('✗ 无法访问 SerialDebugger.js: ' + err, 'error'));
+
+        // 测试 2: 检查 SerialDebugger.wasm 是否存在
+        log('测试 2: 检查 SerialDebugger.wasm', 'info');
+        fetch('SerialDebugger.wasm', { method: 'HEAD' })
+            .then(response => {
+                if (response.ok) {
+                    const size = response.headers.get('content-length');
+                    const sizeMB = size ? (size/1024/1024).toFixed(2) : '未知';
+                    log('✓ SerialDebugger.wasm 存在，大小: ' + sizeMB + ' MB', 'success');
+                    
+                    if (size && size < 1000000) {
+                        log('⚠ 警告: .wasm 文件太小 (' + sizeMB + ' MB)，应该是 4-5 MB', 'warning');
+                    }
+                } else {
+                    log('✗ SerialDebugger.wasm 不存在 (HTTP ' + response.status + ')', 'error');
+                }
+            })
+            .catch(err => log('✗ 无法访问 SerialDebugger.wasm: ' + err, 'error'));
+
+        // 测试 3: 尝试加载 SerialDebugger.js
+        log('测试 3: 尝试加载 SerialDebugger.js', 'info');
+        
+        window.Module = {
+            print: function(text) {
+                log('[Module.print] ' + text, 'info');
+            },
+            printErr: function(text) {
+                log('[Module.printErr] ' + text, 'error');
+            },
+            setStatus: function(text) {
+                if (text) {
+                    log('[Module.setStatus] ' + text, 'info');
+                } else {
+                    log('[Module.setStatus] 加载完成！', 'success');
+                }
+            },
+            onRuntimeInitialized: function() {
+                log('✓ 运行时初始化成功！', 'success');
+            },
+            onAbort: function(what) {
+                log('✗ 应用中止: ' + what, 'error');
+            }
+        };
+
+        const script = document.createElement('script');
+        script.src = 'SerialDebugger.js';
+        script.onload = function() {
+            log('✓ SerialDebugger.js 脚本已加载', 'success');
+        };
+        script.onerror = function() {
+            log('✗ SerialDebugger.js 脚本加载失败', 'error');
+        };
+        
+        log('正在加载 SerialDebugger.js...', 'info');
+        document.body.appendChild(script);
+
+        // 超时检测
+        setTimeout(function() {
+            log('⚠ 30秒超时 - 如果还没有看到"运行时初始化成功"，说明有问题', 'warning');
+        }, 30000);
+
+        // 错误捕获
+        window.onerror = function(msg, url, line) {
+            log('✗ JavaScript 错误: ' + msg + ' (行 ' + line + ')', 'error');
+            return false;
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+            log('✗ Promise 错误: ' + event.reason, 'error');
+        });
+    </script>
+</body>
+</html>

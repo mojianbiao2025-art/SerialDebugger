@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>串口调试助手 - Serial Port Debugger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .info-box h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .info-box li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .requirements {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .requirements h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .requirements p {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status {
+            text-align: center;
+            font-size: 1.1em;
+            color: #666;
+            margin-top: 20px;
+        }
+
+        #canvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 1200px;
+            height: 800px;
+            background: #f5f5f5;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: transform 0.2s;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .browser-support {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .browser-support h3 {
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+
+        .browser-list {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .browser-item {
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .browser-item.supported {
+            border: 2px solid #28a745;
+        }
+
+        .browser-item.not-supported {
+            border: 2px solid #dc3545;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 串口调试助手</h1>
+            <p>Serial Port Debugger - Web Version</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">基于 Qt WebAssembly 和 Web Serial API</p>
+        </div>
+
+        <div class="content">
+            <div class="info-box">
+                <h2>✨ 功能特性</h2>
+                <ul>
+                    <li>串口配置（波特率、数据位、停止位、校验位）</li>
+                    <li>HEX 发送/接收模式</li>
+                    <li>时间戳显示</li>
+                    <li>字节计数器（RX/TX）</li>
+                    <li>自动发送功能</li>
+                    <li>命令列表管理</li>
+                    <li>6 通道数据绘图</li>
+                    <li>多语言支持（中文、英文、日文、德文、法文）</li>
+                </ul>
+            </div>
+
+            <div class="browser-support">
+                <h3>🌐 浏览器支持</h3>
+                <p>Web Serial API 需要支持的浏览器：</p>
+                <div class="browser-list">
+                    <div class="browser-item supported">
+                        <div style="font-size: 2em;">✓</div>
+                        <strong>Chrome 89+</strong>
+                    </div>
+                    <div class="browser-item supported">
+                        <div style="font-size: 2em;">✓</div>
+                        <strong>Edge 89+</strong>
+                    </div>
+                    <div class="browser-item supported">
+                        <div style="font-size: 2em;">✓</div>
+                        <strong>Opera 75+</strong>
+                    </div>
+                    <div class="browser-item not-supported">
+                        <div style="font-size: 2em;">✗</div>
+                        <strong>Firefox</strong>
+                        <div style="font-size: 0.8em;">(暂不支持)</div>
+                    </div>
+                    <div class="browser-item not-supported">
+                        <div style="font-size: 2em;">✗</div>
+                        <strong>Safari</strong>
+                        <div style="font-size: 0.8em;">(暂不支持)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="requirements">
+                <h3>⚠️ 使用要求</h3>
+                <p><strong>1. HTTPS 连接：</strong>Web Serial API 仅在 HTTPS 或 localhost 环境下可用</p>
+                <p><strong>2. 用户授权：</strong>首次使用需要用户手动授权串口访问权限</p>
+                <p><strong>3. 浏览器支持：</strong>请使用 Chrome 89+、Edge 89+ 或 Opera 75+ 浏览器</p>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div class="status" id="status">正在加载应用程序...</div>
+            </div>
+
+            <canvas id="canvas" style="display: none;"></canvas>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 上海大族富创得股份有限公司 | 作者：莫建标</p>
+            <p style="margin-top: 10px;">
+                <a href="https://github.com/mojianbiao2025-art/SerialDebugger" class="btn" target="_blank">
+                    📦 GitHub 仓库
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced debugging and status reporting
+        var debugLog = [];
+        function addDebugLog(message, isError) {
+            var timestamp = new Date().toLocaleTimeString();
+            var logEntry = '[' + timestamp + '] ' + message;
+            debugLog.push(logEntry);
+            console.log(logEntry);
+            
+            var statusDiv = document.getElementById('status');
+            if (isError) {
+                statusDiv.innerHTML = '<span style="color: red;">' + message + '</span>';
+            } else {
+                statusDiv.textContent = message;
+            }
+        }
+
+        // Check protocol
+        if (window.location.protocol === 'file:') {
+            addDebugLog('⚠️ 警告：使用 file:// 协议可能导致加载失败！请使用 HTTP 服务器', true);
+            document.getElementById('loading').style.background = '#fff3cd';
+        } else {
+            addDebugLog('✓ 使用 ' + window.location.protocol + ' 协议');
+        }
+
+        // Check Web Serial API support
+        if ('serial' in navigator) {
+            addDebugLog('✓ 浏览器支持 Web Serial API');
+        } else {
+            addDebugLog('⚠️ 浏览器不支持 Web Serial API，请使用 Chrome 89+、Edge 89+ 或 Opera 75+', true);
+            document.getElementById('loading').style.background = '#fff3cd';
+        }
+
+        // Check if files exist before loading
+        addDebugLog('正在检查必需文件...');
+        
+        Promise.all([
+            fetch('SerialDebugger.js', { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        addDebugLog('✓ SerialDebugger.js 找到 (' + Math.round(response.headers.get('content-length') / 1024) + ' KB)');
+                        return true;
+                    } else {
+                        addDebugLog('✗ SerialDebugger.js 未找到 (HTTP ' + response.status + ')', true);
+                        return false;
+                    }
+                })
+                .catch(error => {
+                    addDebugLog('✗ 无法访问 SerialDebugger.js: ' + error.message, true);
+                    return false;
+                }),
+            
+            fetch('SerialDebugger.wasm', { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        var sizeMB = (response.headers.get('content-length') / 1024 / 1024).toFixed(2);
+                        addDebugLog('✓ SerialDebugger.wasm 找到 (' + sizeMB + ' MB)');
+                        return true;
+                    } else {
+                        addDebugLog('✗ SerialDebugger.wasm 未找到 (HTTP ' + response.status + ')', true);
+                        return false;
+                    }
+                })
+                .catch(error => {
+                    addDebugLog('✗ 无法访问 SerialDebugger.wasm: ' + error.message, true);
+                    return false;
+                })
+        ]).then(results => {
+            if (results.every(r => r)) {
+                addDebugLog('✓ 所有必需文件检查通过，开始加载应用程序...');
+            } else {
+                addDebugLog('✗ 文件检查失败！请确保：\n1. 通过 HTTP 服务器访问（不是 file://）\n2. 文件已正确部署\n3. 检查浏览器控制台（F12）获取详细错误', true);
+            }
+        });
+
+        var canvas = document.getElementById('canvas');
+        canvas.addEventListener("webglcontextlost", function(e) {
+            addDebugLog('WebGL 上下文丢失，需要重新加载页面', true);
+            alert('WebGL context lost. You will need to reload the page.');
+            e.preventDefault();
+        }, false);
+
+        // Set canvas size
+        canvas.width = 1200;
+        canvas.height = 800;
+
+        var Module = {
+            preRun: [],
+            postRun: [],
+            print: function(text) {
+                console.log('[stdout]', text);
+                addDebugLog(text);
+            },
+            printErr: function(text) {
+                console.error('[stderr]', text);
+                addDebugLog('错误: ' + text, true);
+            },
+            // Use qtCanvasElements instead of deprecated canvas property
+            qtCanvasElements: [canvas],
+            // Qt-specific configuration
+            arguments: [],
+            // Ensure Qt has proper environment
+            environment: {},
+            setStatus: function(text) {
+                if (text) {
+                    addDebugLog(text);
+                } else {
+                    addDebugLog('✓ 应用程序加载完成！');
+                    setTimeout(function() {
+                        document.getElementById('loading').style.display = 'none';
+                        canvas.style.display = 'block';
+                        // Ensure canvas is visible and sized correctly
+                        canvas.style.display = 'block';
+                        addDebugLog('Canvas 尺寸: ' + canvas.width + 'x' + canvas.height);
+                        addDebugLog('Canvas 可见: ' + (canvas.offsetWidth > 0 ? '是' : '否'));
+                        
+                        // Force a repaint
+                        setTimeout(function() {
+                            addDebugLog('尝试强制重绘...');
+                            if (Module._qt_force_repaint) {
+                                Module._qt_force_repaint();
+                            }
+                        }, 1000);
+                    }, 500);
+                }
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+                var message = left ? 
+                    '正在加载依赖项 (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 
+                    '所有依赖项已加载';
+                Module.setStatus(message);
+            },
+            onRuntimeInitialized: function() {
+                addDebugLog('✓ WebAssembly 运行时初始化成功！');
+                addDebugLog('Canvas 元素: ' + (canvas ? '已找到' : '未找到'));
+                addDebugLog('Module 对象: ' + (typeof Module !== 'undefined' ? '已创建' : '未创建'));
+                
+                // Check if Qt is initialized
+                setTimeout(function() {
+                    addDebugLog('检查 Qt 初始化状态...');
+                    var ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        var imageData = ctx.getImageData(0, 0, 1, 1);
+                        addDebugLog('Canvas 上下文: 可用');
+                        addDebugLog('Canvas 内容: ' + (imageData.data[3] > 0 ? '有内容' : '空白'));
+                    }
+                }, 2000);
+            }
+        };
+
+        Module.setStatus('正在下载应用程序...');
+        
+        window.onerror = function(message, source, lineno, colno, error) {
+            var errorMsg = '异常: ' + message;
+            if (source) errorMsg += ' (在 ' + source + ':' + lineno + ')';
+            addDebugLog(errorMsg, true);
+            console.error('Full error:', error);
+            return false;
+        };
+
+        // Add unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(event) {
+            addDebugLog('Promise 错误: ' + event.reason, true);
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+    </script>
+    <script src="SerialDebugger.js" onerror="addDebugLog('✗ 无法加载 SerialDebugger.js！请检查文件是否存在', true)"></script>
+</body>
+</html>

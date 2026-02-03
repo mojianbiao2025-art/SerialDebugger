@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAssembly 诊断工具</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .section {
+            background: #252526;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 3px solid #007acc;
+        }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .warning { color: #dcdcaa; }
+        .info { color: #9cdcfe; }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        pre {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 WebAssembly 诊断工具</h1>
+    
+    <div class="section">
+        <h2>1. 文件检查</h2>
+        <button onclick="checkFiles()">检查文件</button>
+        <div id="fileCheck"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. 浏览器支持</h2>
+        <div id="browserCheck"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. 网络状态</h2>
+        <div id="networkCheck"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. 快速操作</h2>
+        <button onclick="clearCache()">清除缓存并刷新</button>
+        <button onclick="window.location.href='test-minimal.html'">打开测试页面</button>
+        <button onclick="window.location.href='index.html'">打开主页面</button>
+        <button onclick="window.location.href='index-simple.html'">简化主页面</button>
+        <button onclick="window.location.href='test-load.html'">加载测试</button>
+        <button onclick="window.location.href='quick-diagnosis.html'">快速诊断</button>
+        <button onclick="window.location.href='test-qt-render.html'">Qt渲染测试</button>
+        <button onclick="window.location.href='test-wasm-loading.html'">WASM加载测试</button>
+        <button onclick="window.location.href='test-webgl.html'">WebGL测试</button>
+    </div>
+
+    <script>
+        // 浏览器检查
+        function checkBrowser() {
+            const div = document.getElementById('browserCheck');
+            let html = '<pre>';
+            
+            html += '浏览器: ' + navigator.userAgent + '\n';
+            html += 'WebAssembly: ' + (typeof WebAssembly !== 'undefined' ? '<span class="success">✓ 支持</span>' : '<span class="error">✗ 不支持</span>') + '\n';
+            html += 'Web Serial API: ' + ('serial' in navigator ? '<span class="success">✓ 支持</span>' : '<span class="error">✗ 不支持</span>') + '\n';
+            html += 'localStorage: ' + (typeof Storage !== 'undefined' ? '<span class="success">✓ 可用</span>' : '<span class="error">✗ 不可用</span>') + '\n';
+            html += 'WebGL: ' + (checkWebGL() ? '<span class="success">✓ 支持</span>' : '<span class="error">✗ 不支持</span>') + '\n';
+            
+            html += '</pre>';
+            div.innerHTML = html;
+        }
+
+        function checkWebGL() {
+            try {
+                const canvas = document.createElement('canvas');
+                return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+            } catch(e) {
+                return false;
+            }
+        }
+
+        // 文件检查
+        async function checkFiles() {
+            const div = document.getElementById('fileCheck');
+            div.innerHTML = '<pre>正在检查文件...</pre>';
+            
+            const files = [
+                'SerialDebugger.js',
+                'SerialDebugger.wasm',
+                'index.html',
+                'index-simple.html',
+                'test-minimal.html',
+                'test-load.html',
+                'quick-diagnosis.html',
+                'test-qt-render.html',
+                'test-wasm-loading.html',
+                'test-webgl.html'
+            ];
+            
+            let html = '<pre>';
+            
+            for (const file of files) {
+                try {
+                    const response = await fetch(file, { method: 'HEAD' });
+                    const size = response.headers.get('content-length');
+                    const sizeStr = size ? formatBytes(parseInt(size)) : '未知';
+                    const status = response.ok ? '<span class="success">✓</span>' : '<span class="error">✗</span>';
+                    const lastModified = response.headers.get('last-modified') || '未知';
+                    
+                    html += `${status} ${file}\n`;
+                    html += `   大小: ${sizeStr}\n`;
+                    html += `   状态: ${response.status}\n`;
+                    html += `   修改时间: ${lastModified}\n\n`;
+                } catch (error) {
+                    html += `<span class="error">✗ ${file}</span>\n`;
+                    html += `   错误: ${error.message}\n\n`;
+                }
+            }
+            
+            html += '</pre>';
+            div.innerHTML = html;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // 网络检查
+        function checkNetwork() {
+            const div = document.getElementById('networkCheck');
+            let html = '<pre>';
+            
+            html += '在线状态: ' + (navigator.onLine ? '<span class="success">✓ 在线</span>' : '<span class="error">✗ 离线</span>') + '\n';
+            html += '协议: ' + window.location.protocol + '\n';
+            html += '主机: ' + window.location.host + '\n';
+            html += '路径: ' + window.location.pathname + '\n';
+            
+            html += '</pre>';
+            div.innerHTML = html;
+        }
+
+        // 清除缓存
+        function clearCache() {
+            if (confirm('确定要清除缓存并刷新页面吗？')) {
+                // 清除 localStorage
+                try {
+                    localStorage.clear();
+                } catch(e) {}
+                
+                // 清除 sessionStorage
+                try {
+                    sessionStorage.clear();
+                } catch(e) {}
+                
+                // 强制刷新
+                window.location.reload(true);
+            }
+        }
+
+        // 页面加载时自动检查
+        window.onload = function() {
+            checkBrowser();
+            checkNetwork();
+            checkFiles();
+        };
+    </script>
+</body>
+</html>

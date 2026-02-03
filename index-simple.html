@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>串口调试助手 - Serial Debugger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        #status {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            max-width: 800px;
+            width: 100%;
+        }
+        #canvas {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .log {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 5px;
+            margin: 2px 0;
+            border-radius: 3px;
+        }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        .warning { background: #fff3e0; color: #ef6c00; }
+        .info { background: #e3f2fd; color: #1565c0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔌 串口调试助手</h1>
+        <p>Serial Port Debugger - WebAssembly Version</p>
+    </div>
+
+    <div id="status">
+        <h3>加载状态</h3>
+        <div id="logs"></div>
+    </div>
+
+    <canvas id="canvas" width="1200" height="800"></canvas>
+
+    <script>
+        var logs = document.getElementById('logs');
+        var canvas = document.getElementById('canvas');
+        var loadStartTime = Date.now();
+
+        function log(message, type = 'info') {
+            var timestamp = new Date().toLocaleTimeString();
+            var elapsed = ((Date.now() - loadStartTime) / 1000).toFixed(1);
+            var div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.textContent = '[' + elapsed + 's] ' + message;
+            logs.appendChild(div);
+            console.log('[' + elapsed + 's]', message);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        // 检查基本支持
+        log('检查浏览器支持...', 'info');
+        
+        if (typeof WebAssembly === 'undefined') {
+            log('❌ 浏览器不支持 WebAssembly！', 'error');
+        } else {
+            log('✓ WebAssembly 支持', 'success');
+        }
+
+        if ('serial' in navigator) {
+            log('✓ Web Serial API 支持', 'success');
+        } else {
+            log('⚠ Web Serial API 不支持（需要 Chrome 89+）', 'warning');
+        }
+
+        // 配置 Module
+        log('配置 WebAssembly 模块...', 'info');
+        
+        var Module = {
+            preRun: [],
+            postRun: [],
+            print: function(text) {
+                log('[Qt] ' + text, 'info');
+            },
+            printErr: function(text) {
+                log('[Qt Error] ' + text, 'error');
+            },
+            canvas: canvas,
+            setStatus: function(text) {
+                if (text) {
+                    log(text, 'info');
+                } else {
+                    log('✓ 应用加载完成', 'success');
+                    document.getElementById('status').style.display = 'none';
+                    canvas.style.display = 'block';
+                }
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+                if (left) {
+                    log('加载依赖 (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')', 'info');
+                } else {
+                    log('✓ 所有依赖已加载', 'success');
+                }
+            },
+            onRuntimeInitialized: function() {
+                log('✓ 运行时初始化完成', 'success');
+            },
+            onAbort: function(what) {
+                log('❌ 应用中止: ' + what, 'error');
+            }
+        };
+
+        // 错误处理
+        window.onerror = function(msg, url, line, col, error) {
+            log('❌ JavaScript 错误: ' + msg, 'error');
+            if (url) log('   位置: ' + url + ':' + line, 'error');
+            return false;
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+            log('❌ Promise 错误: ' + event.reason, 'error');
+        });
+
+        // 开始加载
+        log('开始加载 SerialDebugger.js...', 'info');
+        Module.setStatus('正在下载应用...');
+
+        // 动态加载脚本
+        var script = document.createElement('script');
+        script.src = 'SerialDebugger.js';
+        script.onerror = function() {
+            log('❌ 无法加载 SerialDebugger.js', 'error');
+            log('请检查文件是否存在或网络连接', 'error');
+        };
+        script.onload = function() {
+            log('✓ SerialDebugger.js 已加载', 'success');
+        };
+        document.body.appendChild(script);
+
+        // 超时检测
+        setTimeout(function() {
+            if (canvas.style.display === 'none') {
+                log('⚠ 加载超时（30秒）', 'warning');
+                log('可能的原因：', 'warning');
+                log('1. 网络连接慢', 'warning');
+                log('2. .wasm 文件太大', 'warning');
+                log('3. 浏览器兼容性问题', 'warning');
+                log('建议：刷新页面或清除缓存后重试', 'warning');
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

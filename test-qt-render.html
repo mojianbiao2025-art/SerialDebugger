@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Qt WebAssembly 渲染测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        h1 {
+            color: #333;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .error {
+            background: #ffebee;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #f44336;
+        }
+        .success {
+            background: #e8f5e9;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4caf50;
+        }
+        #canvas {
+            border: 2px solid #333;
+            display: block;
+            margin: 20px auto;
+            background: #f5f5f5;
+        }
+        #log {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 4px;
+        }
+        .log-entry {
+            margin: 2px 0;
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Qt WebAssembly 渲染诊断</h1>
+        
+        <div class="info">
+            <strong>测试目的：</strong>检查 Qt 应用是否正确渲染到 canvas
+        </div>
+
+        <div id="status" class="info">
+            正在初始化...
+        </div>
+
+        <div>
+            <button onclick="checkCanvas()">检查 Canvas</button>
+            <button onclick="checkModule()">检查 Module</button>
+            <button onclick="forceRepaint()">强制重绘</button>
+            <button onclick="clearLog()">清除日志</button>
+        </div>
+
+        <canvas id="canvas" width="1200" height="800"></canvas>
+
+        <h2>调试日志</h2>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        var logEntries = [];
+
+        function log(message, type) {
+            type = type || 'info';
+            var timestamp = new Date().toLocaleTimeString();
+            var entry = '[' + timestamp + '] ' + message;
+            logEntries.push(entry);
+            
+            var logDiv = document.getElementById('log');
+            var entryDiv = document.createElement('div');
+            entryDiv.className = 'log-entry';
+            entryDiv.textContent = entry;
+            logDiv.appendChild(entryDiv);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(entry);
+        }
+
+        function updateStatus(message, type) {
+            var statusDiv = document.getElementById('status');
+            statusDiv.className = type || 'info';
+            statusDiv.innerHTML = '<strong>状态：</strong>' + message;
+        }
+
+        function checkCanvas() {
+            var canvas = document.getElementById('canvas');
+            log('=== Canvas 检查 ===');
+            log('Canvas 元素: ' + (canvas ? '存在' : '不存在'));
+            log('Canvas 宽度: ' + canvas.width);
+            log('Canvas 高度: ' + canvas.height);
+            log('CSS 宽度: ' + canvas.offsetWidth);
+            log('CSS 高度: ' + canvas.offsetHeight);
+            log('Display: ' + window.getComputedStyle(canvas).display);
+            log('Visibility: ' + window.getComputedStyle(canvas).visibility);
+            
+            // WARNING: Getting 2D context will prevent WebGL context!
+            // Only check if explicitly requested
+            log('⚠️ 注意：检查 2D/WebGL 上下文会干扰 Qt 渲染');
+            log('如果需要检查上下文，请在 Qt 加载前进行');
+        }
+
+        function checkModule() {
+            log('=== Module 检查 ===');
+            log('Module 对象: ' + (typeof Module !== 'undefined' ? '存在' : '不存在'));
+            if (typeof Module !== 'undefined') {
+                log('Module.qtCanvasElements: ' + (Module.qtCanvasElements ? '已设置' : '未设置'));
+                if (Module.qtCanvasElements) {
+                    log('Canvas 元素数量: ' + Module.qtCanvasElements.length);
+                }
+                log('Module.canvas (deprecated): ' + (Module.canvas ? '存在' : '不存在'));
+                log('Module.print: ' + (typeof Module.print === 'function' ? '函数' : '未定义'));
+                log('Module.ccall: ' + (typeof Module.ccall === 'function' ? '函数' : '未定义'));
+            }
+        }
+
+        function forceRepaint() {
+            log('=== 尝试强制重绘 ===');
+            var canvas = document.getElementById('canvas');
+            
+            // Method 1: Trigger resize event
+            window.dispatchEvent(new Event('resize'));
+            log('触发 resize 事件');
+            
+            // Method 2: Toggle display
+            canvas.style.display = 'none';
+            setTimeout(function() {
+                canvas.style.display = 'block';
+                log('切换 display 属性');
+            }, 100);
+            
+            // Method 3: Call Qt repaint if available
+            if (typeof Module !== 'undefined' && Module._qt_force_repaint) {
+                Module._qt_force_repaint();
+                log('调用 Qt 重绘函数');
+            } else {
+                log('Qt 重绘函数不可用');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            logEntries = [];
+        }
+
+        // Initialize
+        log('页面加载完成');
+        log('浏览器: ' + navigator.userAgent);
+        log('协议: ' + window.location.protocol);
+
+        var canvas = document.getElementById('canvas');
+        canvas.addEventListener("webglcontextlost", function(e) {
+            log('WebGL 上下文丢失！', 'error');
+            updateStatus('WebGL 上下文丢失', 'error');
+            e.preventDefault();
+        }, false);
+
+        var Module = {
+            preRun: [],
+            postRun: [],
+            print: function(text) {
+                log('[Qt stdout] ' + text);
+            },
+            printErr: function(text) {
+                log('[Qt stderr] ' + text, 'error');
+            },
+            qtCanvasElements: [canvas],
+            arguments: [],
+            setStatus: function(text) {
+                if (text) {
+                    log('[Status] ' + text);
+                    updateStatus(text, 'info');
+                } else {
+                    log('[Status] 加载完成');
+                    updateStatus('应用程序加载完成', 'success');
+                    
+                    // Auto-check after load
+                    setTimeout(function() {
+                        checkCanvas();
+                        checkModule();
+                    }, 1000);
+                }
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+                var message = left ? 
+                    '加载依赖项 (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 
+                    '所有依赖项已加载';
+                Module.setStatus(message);
+            },
+            onRuntimeInitialized: function() {
+                log('✓ WebAssembly 运行时初始化成功');
+                updateStatus('WebAssembly 运行时已初始化', 'success');
+            }
+        };
+
+        Module.setStatus('正在下载应用程序...');
+        
+        window.onerror = function(message, source, lineno, colno, error) {
+            log('JavaScript 错误: ' + message, 'error');
+            if (source) log('  位置: ' + source + ':' + lineno);
+            updateStatus('发生 JavaScript 错误', 'error');
+            return false;
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+            log('Promise 错误: ' + event.reason, 'error');
+            updateStatus('发生 Promise 错误', 'error');
+        });
+
+        // Auto-check periodically
+        setInterval(function() {
+            var canvas = document.getElementById('canvas');
+            var ctx = canvas.getContext('2d');
+            if (ctx) {
+                var imageData = ctx.getImageData(canvas.width/2, canvas.height/2, 1, 1);
+                if (imageData.data[3] > 0) {
+                    log('检测到 canvas 内容更新');
+                    updateStatus('Canvas 有内容渲染', 'success');
+                }
+            }
+        }, 5000);
+    </script>
+    <script src="SerialDebugger.js" onerror="log('无法加载 SerialDebugger.js', 'error'); updateStatus('无法加载应用程序', 'error');"></script>
+</body>
+</html>
