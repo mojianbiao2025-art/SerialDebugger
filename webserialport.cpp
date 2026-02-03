@@ -2,7 +2,8 @@
 #include <QDebug>
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten/bind.h>
+#include <emscripten.h>
+#include <emscripten/val.h>
 
 // Global pointer for callback
 static WebSerialPort* g_webSerialPort = nullptr;
