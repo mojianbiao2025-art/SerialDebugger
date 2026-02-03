@@ -241,31 +241,18 @@ jobs:
           # Check if Qt5CoreMacros.cmake exists
           if [ ! -f "$QT_ROOT/lib/cmake/Qt5Core/Qt5CoreMacros.cmake" ]; then
             echo "WARNING: Qt5CoreMacros.cmake not found, creating minimal version..."
-            cat > $QT_ROOT/lib/cmake/Qt5Core/Qt5CoreMacros.cmake << 'EOF'
-# Minimal Qt5CoreMacros.cmake for WebAssembly builds
-macro(_qt5_Core_check_file_exists file)
-    if(NOT EXISTS "${file}")
-        message(FATAL_ERROR "The imported target \"${_qt5_Core_target_name}\" references the file \"${file}\" but this file does not exist.")
-    endif()
-endmacro()
-
-function(_qt5_Core_process_prl_file prl_file_location Configuration lib_deps link_flags)
-    set(_lib_deps)
-    set(_link_flags)
-    
-    if(EXISTS "${prl_file_location}")
-        file(STRINGS "${prl_file_location}" _prl_strings REGEX "QMAKE_PRL_LIBS")
-        if(_prl_strings)
-            string(REGEX REPLACE "QMAKE_PRL_LIBS *= *" "" _static_depends ${_prl_strings})
-            string(REGEX REPLACE "[ \t]+" ";" _static_depends ${_static_depends})
-            set(_lib_deps ${_static_depends})
-        endif()
-    endif()
-    
-    set(${lib_deps} ${_lib_deps} PARENT_SCOPE)
-    set(${link_flags} ${_link_flags} PARENT_SCOPE)
-endfunction()
-EOF
+            mkdir -p $QT_ROOT/lib/cmake/Qt5Core
+            cat > $QT_ROOT/lib/cmake/Qt5Core/Qt5CoreMacros.cmake <<'EOFMACRO'
+        macro(_qt5_Core_check_file_exists file)
+            if(NOT EXISTS "${file}")
+                message(FATAL_ERROR "File does not exist: ${file}")
+            endif()
+        endmacro()
+        function(_qt5_Core_process_prl_file prl_file_location Configuration lib_deps link_flags)
+            set(${lib_deps} "" PARENT_SCOPE)
+            set(${link_flags} "" PARENT_SCOPE)
+        endfunction()
+        EOFMACRO
           fi
           
           ls -la $QT_ROOT/lib/cmake/ 2>/dev/null || echo "Cannot list cmake modules"
