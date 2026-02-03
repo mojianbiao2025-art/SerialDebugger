@@ -134,6 +134,10 @@
             margin: 0 auto;
             border: 1px solid #ddd;
             border-radius: 4px;
+            width: 100%;
+            max-width: 1200px;
+            height: 800px;
+            background: #f5f5f5;
         }
 
         .footer {
@@ -358,6 +362,10 @@
             e.preventDefault();
         }, false);
 
+        // Set canvas size
+        canvas.width = 1200;
+        canvas.height = 800;
+
         var Module = {
             preRun: [],
             postRun: [],
@@ -379,6 +387,9 @@
                     setTimeout(function() {
                         document.getElementById('loading').style.display = 'none';
                         document.getElementById('canvas').style.display = 'block';
+                        // Ensure canvas is visible and sized correctly
+                        canvas.style.display = 'block';
+                        addDebugLog('Canvas 尺寸: ' + canvas.width + 'x' + canvas.height);
                     }, 500);
                 }
             },
@@ -392,6 +403,7 @@
             },
             onRuntimeInitialized: function() {
                 addDebugLog('✓ WebAssembly 运行时初始化成功！');
+                addDebugLog('Canvas 元素: ' + (canvas ? '已找到' : '未找到'));
             }
         };
 

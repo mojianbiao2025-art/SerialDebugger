@@ -1,0 +1,144 @@
+========================================
+WebAssembly 错误修复 - 提交说明
+========================================
+
+已修复的问题：
+1. Module.canvas is deprecated 警告
+2. TypeError: Cannot read properties of undefined (reading 'apply')
+
+修改的文件：
+✓ CMakeLists.txt - 添加函数导出配置
+✓ index.html - 使用新的 Qt API
+✓ test-wasm-loading.html - 新增诊断工具
+✓ .github/workflows/build-all.yml - 更新部署配置
+✓ .github/workflows/wasm-build.yml - 更新部署配置
+✓ 多个文档文件 - 详细说明
+
+========================================
+提交方法（三选一）：
+========================================
+
+方法 1：使用批处理脚本（推荐）
+--------------------------------------
+双击运行：commit_wasm_fix.bat
+
+这个脚本会：
+- 自动添加所有修改的文件
+- 显示修改摘要
+- 询问确认后提交
+- 询问是否推送到 GitHub
+
+
+方法 2：使用 Git 命令
+--------------------------------------
+打开命令提示符，执行：
+
+git add CMakeLists.txt index.html test-wasm-loading.html
+git add .github/workflows/build-all.yml .github/workflows/wasm-build.yml
+git add WASM_EMVAL_FIX.md WASM_LOADING_SOLUTION.md
+git add WebAssembly错误修复说明.md 浏览器加载问题解决方案.md
+
+git commit -m "Fix: Export runtime methods for WebAssembly"
+
+git push
+
+
+方法 3：使用 VS Code 或其他 Git 工具
+--------------------------------------
+1. 打开 Source Control 面板
+2. 暂存所有修改的文件
+3. 输入提交信息：Fix: Export runtime methods for WebAssembly
+4. 提交并推送
+
+
+========================================
+提交后的操作：
+========================================
+
+1. 查看 GitHub Actions 构建状态
+   https://github.com/mojianbiao2025-art/SerialDebugger/actions
+   
+   等待绿色勾号（约 10-15 分钟）
+
+2. 构建完成后，测试应用
+   https://mojianbiao2025-art.github.io/SerialDebugger/
+   
+   按 Ctrl+F5 强制刷新（清除缓存）
+
+3. 如果需要诊断，使用诊断工具
+   https://mojianbiao2025-art.github.io/SerialDebugger/test-wasm-loading.html
+
+4. 检查浏览器控制台（F12）
+   应该看到：
+   ✓ WebAssembly 运行时初始化成功！
+   ✓ 应用程序加载完成！
+   
+   不应该再看到：
+   ✗ Module.canvas is deprecated
+   ✗ TypeError: Cannot read properties of undefined
+
+
+========================================
+预期结果：
+========================================
+
+修复前：
+✗ 页面只显示加载界面
+✗ 控制台显示 Module.canvas 警告
+✗ 控制台显示 TypeError 错误
+✗ Qt 应用程序界面不显示
+
+修复后：
+✓ Qt 应用程序完整界面显示
+✓ 没有弃用警告
+✓ 没有 TypeError 错误
+✓ 串口功能可以正常使用
+
+
+========================================
+如果遇到问题：
+========================================
+
+1. 清除浏览器缓存
+   Chrome/Edge: Ctrl+Shift+Delete
+
+2. 硬刷新页面
+   Ctrl+F5 或 Ctrl+Shift+R
+
+3. 使用诊断工具
+   访问 test-wasm-loading.html
+
+4. 查看详细文档
+   - WebAssembly错误修复说明.md（中文）
+   - WASM_EMVAL_FIX.md（英文技术细节）
+
+
+========================================
+技术细节：
+========================================
+
+修复的核心是在 CMakeLists.txt 中添加：
+
+EXPORTED_RUNTIME_METHODS=['ccall','cwrap','allocateUTF8']
+- 导出 Emscripten 运行时方法
+- 允许 JavaScript 调用 C++ 函数
+
+EXPORTED_FUNCTIONS=['_malloc','_free','_webserial_*']
+- 导出 C++ 回调函数
+- 允许 Web Serial API 回调 C++ 代码
+
+这样 webserialport.cpp 中的 JavaScript 代码就可以
+正确调用 C++ 函数了。
+
+
+========================================
+联系方式：
+========================================
+
+如果修复后仍有问题，请提供：
+1. 诊断工具的日志（点击"下载日志"）
+2. 浏览器控制台截图（F12 → Console）
+3. Network 标签截图（F12 → Network）
+
+作者：莫建标
+公司：上海大族富创得股份有限公司
