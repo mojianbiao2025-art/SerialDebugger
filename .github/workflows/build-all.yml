@@ -346,6 +346,7 @@ jobs:
         cp build-wasm/bin/SerialDebugger.* deploy/
         cp index.html deploy/
         cp test-wasm-loading.html deploy/
+        cp test-qt-render.html deploy/
         cp lang_*.ini deploy/
         cp styles.qss deploy/
         
