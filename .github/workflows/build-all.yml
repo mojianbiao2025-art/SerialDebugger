@@ -255,6 +255,9 @@ jobs:
         export CMAKE_PREFIX_PATH=$QT_ROOT
         export PATH=$QT_ROOT/bin:$PATH
         
+        # Fix qt-cmake permissions
+        chmod +x $QT_ROOT/bin/qt-cmake
+        
         mkdir build-wasm
         cd build-wasm
         
