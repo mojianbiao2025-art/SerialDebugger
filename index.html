@@ -277,28 +277,95 @@
     </div>
 
     <script>
+        // Enhanced debugging and status reporting
+        var debugLog = [];
+        function addDebugLog(message, isError) {
+            var timestamp = new Date().toLocaleTimeString();
+            var logEntry = '[' + timestamp + '] ' + message;
+            debugLog.push(logEntry);
+            console.log(logEntry);
+            
+            var statusDiv = document.getElementById('status');
+            if (isError) {
+                statusDiv.innerHTML = '<span style="color: red;">' + message + '</span>';
+            } else {
+                statusDiv.textContent = message;
+            }
+        }
+
+        // Check protocol
+        if (window.location.protocol === 'file:') {
+            addDebugLog('⚠️ 警告：使用 file:// 协议可能导致加载失败！请使用 HTTP 服务器', true);
+            document.getElementById('loading').style.background = '#fff3cd';
+        } else {
+            addDebugLog('✓ 使用 ' + window.location.protocol + ' 协议');
+        }
+
         // Check Web Serial API support
         if ('serial' in navigator) {
-            document.getElementById('status').textContent = '浏览器支持 Web Serial API ✓';
+            addDebugLog('✓ 浏览器支持 Web Serial API');
         } else {
-            document.getElementById('status').innerHTML = 
-                '⚠️ 您的浏览器不支持 Web Serial API<br>' +
-                '请使用 Chrome 89+、Edge 89+ 或 Opera 75+ 浏览器';
+            addDebugLog('⚠️ 浏览器不支持 Web Serial API，请使用 Chrome 89+、Edge 89+ 或 Opera 75+', true);
             document.getElementById('loading').style.background = '#fff3cd';
         }
+
+        // Check if files exist before loading
+        addDebugLog('正在检查必需文件...');
+        
+        Promise.all([
+            fetch('SerialDebugger.js', { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        addDebugLog('✓ SerialDebugger.js 找到 (' + Math.round(response.headers.get('content-length') / 1024) + ' KB)');
+                        return true;
+                    } else {
+                        addDebugLog('✗ SerialDebugger.js 未找到 (HTTP ' + response.status + ')', true);
+                        return false;
+                    }
+                })
+                .catch(error => {
+                    addDebugLog('✗ 无法访问 SerialDebugger.js: ' + error.message, true);
+                    return false;
+                }),
+            
+            fetch('SerialDebugger.wasm', { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        var sizeMB = (response.headers.get('content-length') / 1024 / 1024).toFixed(2);
+                        addDebugLog('✓ SerialDebugger.wasm 找到 (' + sizeMB + ' MB)');
+                        return true;
+                    } else {
+                        addDebugLog('✗ SerialDebugger.wasm 未找到 (HTTP ' + response.status + ')', true);
+                        return false;
+                    }
+                })
+                .catch(error => {
+                    addDebugLog('✗ 无法访问 SerialDebugger.wasm: ' + error.message, true);
+                    return false;
+                })
+        ]).then(results => {
+            if (results.every(r => r)) {
+                addDebugLog('✓ 所有必需文件检查通过，开始加载应用程序...');
+            } else {
+                addDebugLog('✗ 文件检查失败！请确保：\n1. 通过 HTTP 服务器访问（不是 file://）\n2. 文件已正确部署\n3. 检查浏览器控制台（F12）获取详细错误', true);
+            }
+        });
 
         var Module = {
             preRun: [],
             postRun: [],
             print: function(text) {
-                console.log(text);
+                console.log('[stdout]', text);
+                addDebugLog(text);
             },
             printErr: function(text) {
-                console.error(text);
+                console.error('[stderr]', text);
+                addDebugLog('错误: ' + text, true);
             },
             canvas: (function() {
                 var canvas = document.getElementById('canvas');
                 canvas.addEventListener("webglcontextlost", function(e) {
+                    addDebugLog('WebGL 上下文丢失，需要重新加载页面', true);
                     alert('WebGL context lost. You will need to reload the page.');
                     e.preventDefault();
                 }, false);
@@ -306,26 +373,44 @@
             })(),
             setStatus: function(text) {
                 if (text) {
-                    document.getElementById('status').textContent = text;
+                    addDebugLog(text);
                 } else {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('canvas').style.display = 'block';
+                    addDebugLog('✓ 应用程序加载完成！');
+                    setTimeout(function() {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('canvas').style.display = 'block';
+                    }, 500);
                 }
             },
             totalDependencies: 0,
             monitorRunDependencies: function(left) {
                 this.totalDependencies = Math.max(this.totalDependencies, left);
-                Module.setStatus(left ? 
+                var message = left ? 
                     '正在加载依赖项 (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 
-                    '所有依赖项已加载');
+                    '所有依赖项已加载';
+                Module.setStatus(message);
+            },
+            onRuntimeInitialized: function() {
+                addDebugLog('✓ WebAssembly 运行时初始化成功！');
             }
         };
 
         Module.setStatus('正在下载应用程序...');
-        window.onerror = function(event) {
-            Module.setStatus('异常: ' + event);
+        
+        window.onerror = function(message, source, lineno, colno, error) {
+            var errorMsg = '异常: ' + message;
+            if (source) errorMsg += ' (在 ' + source + ':' + lineno + ')';
+            addDebugLog(errorMsg, true);
+            console.error('Full error:', error);
+            return false;
         };
+
+        // Add unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(event) {
+            addDebugLog('Promise 错误: ' + event.reason, true);
+            console.error('Unhandled promise rejection:', event.reason);
+        });
     </script>
-    <script src="SerialDebugger.js"></script>
+    <script src="SerialDebugger.js" onerror="addDebugLog('✗ 无法加载 SerialDebugger.js！请检查文件是否存在', true)"></script>
 </body>
 </html>

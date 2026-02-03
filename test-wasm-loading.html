@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAssembly 加载测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+        }
+        .test-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        .log-entry {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 WebAssembly 加载诊断工具</h1>
+        
+        <div class="test-section">
+            <h2>1. 环境检查</h2>
+            <div id="env-check">
+                <div class="spinner"></div> 正在检查...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 文件检查</h2>
+            <div id="file-check">
+                <div class="spinner"></div> 正在检查...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 浏览器能力检查</h2>
+            <div id="capability-check">
+                <div class="spinner"></div> 正在检查...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. 操作建议</h2>
+            <div id="suggestions"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. 详细日志</h2>
+            <button onclick="copyLogs()">📋 复制日志</button>
+            <button onclick="downloadLogs()">💾 下载日志</button>
+            <div id="detailed-log" style="max-height: 300px; overflow-y: auto; background: white; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        var allLogs = [];
+
+        function log(message, type) {
+            var timestamp = new Date().toISOString();
+            var logEntry = {
+                timestamp: timestamp,
+                message: message,
+                type: type || 'info'
+            };
+            allLogs.push(logEntry);
+            
+            var logDiv = document.getElementById('detailed-log');
+            var entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(message);
+        }
+
+        function addResult(containerId, message, type) {
+            var container = document.getElementById(containerId);
+            var div = document.createElement('div');
+            div.className = 'test-item ' + type;
+            div.innerHTML = message;
+            
+            if (container.querySelector('.spinner')) {
+                container.innerHTML = '';
+            }
+            container.appendChild(div);
+        }
+
+        function copyLogs() {
+            var text = allLogs.map(l => '[' + l.timestamp + '] ' + l.message).join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                alert('日志已复制到剪贴板');
+            });
+        }
+
+        function downloadLogs() {
+            var text = allLogs.map(l => '[' + l.timestamp + '] ' + l.message).join('\n');
+            var blob = new Blob([text], { type: 'text/plain' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'wasm-diagnostic-' + Date.now() + '.log';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 1. Environment Check
+        log('开始环境检查');
+        var protocol = window.location.protocol;
+        var hostname = window.location.hostname;
+        var port = window.location.port;
+        var fullUrl = window.location.href;
+
+        log('协议: ' + protocol);
+        log('主机: ' + hostname);
+        log('端口: ' + port);
+        log('完整URL: ' + fullUrl);
+
+        if (protocol === 'file:') {
+            addResult('env-check', '❌ 使用 file:// 协议 - 这会导致 CORS 错误！', 'error');
+            log('错误: 使用 file:// 协议', 'error');
+        } else if (protocol === 'https:') {
+            addResult('env-check', '✅ 使用 HTTPS 协议 - 完美！', 'success');
+            log('成功: 使用 HTTPS 协议', 'success');
+        } else if (protocol === 'http:' && (hostname === 'localhost' || hostname === '127.0.0.1')) {
+            addResult('env-check', '✅ 使用本地 HTTP 服务器 - 可以工作', 'success');
+            log('成功: 使用本地 HTTP 服务器', 'success');
+        } else {
+            addResult('env-check', '⚠️ 使用 HTTP 协议 - Web Serial API 可能不可用', 'warning');
+            log('警告: 使用 HTTP 协议（非本地）', 'warning');
+        }
+
+        // 2. File Check
+        log('开始文件检查');
+        var filesToCheck = [
+            'SerialDebugger.js',
+            'SerialDebugger.wasm',
+            'index.html',
+            'lang_zh.ini',
+            'lang_en.ini',
+            'styles.qss'
+        ];
+
+        var fileCheckPromises = filesToCheck.map(file => {
+            log('检查文件: ' + file);
+            return fetch(file, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        var size = response.headers.get('content-length');
+                        var sizeStr = size ? ' (' + (size / 1024).toFixed(2) + ' KB)' : '';
+                        var message = '✅ ' + file + sizeStr;
+                        addResult('file-check', message, 'success');
+                        log('成功: ' + file + ' 找到' + sizeStr, 'success');
+                        return { file: file, status: 'ok', size: size };
+                    } else {
+                        var message = '❌ ' + file + ' - HTTP ' + response.status;
+                        addResult('file-check', message, 'error');
+                        log('错误: ' + file + ' HTTP ' + response.status, 'error');
+                        return { file: file, status: 'error', code: response.status };
+                    }
+                })
+                .catch(error => {
+                    var message = '❌ ' + file + ' - ' + error.message;
+                    addResult('file-check', message, 'error');
+                    log('错误: ' + file + ' - ' + error.message, 'error');
+                    return { file: file, status: 'error', error: error.message };
+                });
+        });
+
+        // 3. Capability Check
+        log('开始浏览器能力检查');
+        
+        // Web Serial API
+        if ('serial' in navigator) {
+            addResult('capability-check', '✅ Web Serial API 支持', 'success');
+            log('成功: Web Serial API 支持', 'success');
+        } else {
+            addResult('capability-check', '❌ Web Serial API 不支持', 'error');
+            log('错误: Web Serial API 不支持', 'error');
+        }
+
+        // WebAssembly
+        if (typeof WebAssembly === 'object') {
+            addResult('capability-check', '✅ WebAssembly 支持', 'success');
+            log('成功: WebAssembly 支持', 'success');
+        } else {
+            addResult('capability-check', '❌ WebAssembly 不支持', 'error');
+            log('错误: WebAssembly 不支持', 'error');
+        }
+
+        // WebGL
+        var canvas = document.createElement('canvas');
+        var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (gl) {
+            addResult('capability-check', '✅ WebGL 支持', 'success');
+            log('成功: WebGL 支持', 'success');
+        } else {
+            addResult('capability-check', '❌ WebGL 不支持', 'error');
+            log('错误: WebGL 不支持', 'error');
+        }
+
+        // Browser info
+        var userAgent = navigator.userAgent;
+        var browserInfo = '浏览器: ' + userAgent;
+        addResult('capability-check', '📱 ' + browserInfo, 'info');
+        log('浏览器信息: ' + userAgent, 'info');
+
+        // 4. Generate Suggestions
+        Promise.all(fileCheckPromises).then(results => {
+            log('文件检查完成');
+            var suggestions = document.getElementById('suggestions');
+            var hasErrors = results.some(r => r.status === 'error');
+            
+            if (protocol === 'file:') {
+                suggestions.innerHTML += '<div class="test-item error"><strong>🚨 必须修复：</strong><br>' +
+                    '您正在使用 file:// 协议访问。请使用 HTTP 服务器：<br>' +
+                    '<pre>cd deploy\npython -m http.server 8000</pre>' +
+                    '然后访问: <code>http://localhost:8000/index.html</code></div>';
+                log('建议: 使用 HTTP 服务器', 'warning');
+            }
+            
+            if (hasErrors) {
+                var missingFiles = results.filter(r => r.status === 'error').map(r => r.file);
+                suggestions.innerHTML += '<div class="test-item error"><strong>🚨 缺少文件：</strong><br>' +
+                    missingFiles.join(', ') + '<br><br>' +
+                    '请确保文件已正确部署：<br>' +
+                    '<pre>mkdir -p deploy\n' +
+                    'cp build-wasm/bin/SerialDebugger.* deploy/\n' +
+                    'cp index.html deploy/\n' +
+                    'cp lang_*.ini deploy/\n' +
+                    'cp styles.qss deploy/</pre></div>';
+                log('建议: 部署缺失的文件', 'warning');
+            }
+            
+            if (!('serial' in navigator)) {
+                suggestions.innerHTML += '<div class="test-item warning"><strong>⚠️ 浏览器不支持：</strong><br>' +
+                    '请使用以下浏览器之一：<br>' +
+                    '• Chrome 89+<br>' +
+                    '• Edge 89+<br>' +
+                    '• Opera 75+</div>';
+                log('建议: 使用支持的浏览器', 'warning');
+            }
+            
+            if (!hasErrors && protocol !== 'file:' && 'serial' in navigator) {
+                suggestions.innerHTML += '<div class="test-item success"><strong>✅ 环境正常！</strong><br>' +
+                    '所有检查通过。如果应用仍无法加载，请：<br>' +
+                    '1. 打开浏览器控制台（F12）查看错误<br>' +
+                    '2. 检查 Network 标签查看文件加载状态<br>' +
+                    '3. 尝试清除浏览器缓存后重新加载</div>';
+                log('所有检查通过', 'success');
+            }
+
+            // Add link to main app
+            suggestions.innerHTML += '<div class="test-item info" style="margin-top: 20px;">' +
+                '<strong>📱 准备好了？</strong><br>' +
+                '<a href="index.html" style="color: #667eea; font-weight: bold;">点击这里打开串口调试助手</a></div>';
+        });
+
+        log('诊断完成');
+    </script>
+</body>
+</html>

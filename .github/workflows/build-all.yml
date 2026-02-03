@@ -345,8 +345,14 @@ jobs:
         mkdir -p deploy
         cp build-wasm/bin/SerialDebugger.* deploy/
         cp index.html deploy/
+        cp test-wasm-loading.html deploy/
         cp lang_*.ini deploy/
         cp styles.qss deploy/
+        
+        echo "=== Deployment files ==="
+        ls -lh deploy/
+        echo "=== Checking critical files ==="
+        ls -lh deploy/SerialDebugger.* || echo "WARNING: SerialDebugger files not found!"
         
     - name: Upload WebAssembly build
       uses: actions/upload-artifact@v4
