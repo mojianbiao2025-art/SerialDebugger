@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>快速诊断</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; border-left: 4px solid #28a745; }
+        .error { background: #f8d7da; border-left: 4px solid #dc3545; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Qt WebAssembly 快速诊断</h1>
+    
+    <button onclick="checkAll()">运行所有检查</button>
+    <button onclick="clearResults()">清除结果</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        function addResult(message, type) {
+            var div = document.createElement('div');
+            div.className = 'result ' + type;
+            div.textContent = message;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        function checkAll() {
+            clearResults();
+            
+            // 1. 检查 WebGL
+            var canvas = document.createElement('canvas');
+            var gl = canvas.getContext('webgl');
+            if (gl) {
+                addResult('✅ WebGL 可用: ' + gl.getParameter(gl.VERSION), 'success');
+            } else {
+                addResult('❌ WebGL 不可用', 'error');
+                return;
+            }
+            
+            // 2. 检查文件
+            var files = [
+                'SerialDebugger.js',
+                'SerialDebugger.wasm',
+                'index.html'
+            ];
+            
+            files.forEach(function(file) {
+                fetch(file, { method: 'HEAD' })
+                    .then(function(response) {
+                        if (response.ok) {
+                            var size = response.headers.get('content-length');
+                            addResult('✅ ' + file + ' 存在 (' + (size/1024).toFixed(2) + ' KB)', 'success');
+                        } else {
+                            addResult('❌ ' + file + ' 不存在 (HTTP ' + response.status + ')', 'error');
+                        }
+                    })
+                    .catch(function(error) {
+                        addResult('❌ ' + file + ' 加载失败: ' + error.message, 'error');
+                    });
+            });
+            
+            // 3. 检查 Module
+            setTimeout(function() {
+                if (typeof Module !== 'undefined') {
+                    addResult('✅ Module 对象存在', 'success');
+                    if (Module.qtCanvasElements) {
+                        addResult('✅ qtCanvasElements 已设置', 'success');
+                    } else {
+                        addResult('❌ qtCanvasElements 未设置', 'error');
+                    }
+                } else {
+                    addResult('⚠️ Module 对象不存在（可能还未加载）', 'warning');
+                }
+            }, 2000);
+            
+            // 4. 检查 Canvas
+            setTimeout(function() {
+                var canvas = document.getElementById('canvas');
+                if (canvas) {
+                    addResult('✅ Canvas 元素存在', 'success');
+                    addResult('Canvas 尺寸: ' + canvas.width + 'x' + canvas.height, 'success');
+                    
+                    // 检查是否有内容（不获取 context，避免干扰）
+                    var rect = canvas.getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                        addResult('✅ Canvas 可见', 'success');
+                    } else {
+                        addResult('❌ Canvas 不可见', 'error');
+                    }
+                } else {
+                    addResult('❌ Canvas 元素不存在', 'error');
+                }
+            }, 3000);
+        }
+        
+        // 自动运行
+        setTimeout(checkAll, 1000);
+    </script>
+</body>
+</html>
