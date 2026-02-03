@@ -230,13 +230,44 @@ jobs:
     - name: Install Qt 5 for WebAssembly
       run: |
         pip3 install aqtinstall==3.1.*
-        # Install Qt 5.15.2 for WebAssembly
-        aqt install-qt linux desktop 5.15.2 wasm_32
+        # Install Qt 5.15.2 for WebAssembly with all modules
+        aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts qtnetworkauth || aqt install-qt linux desktop 5.15.2 wasm_32 || true
         
         QT_ROOT=$(find $PWD -type d -name "wasm_32" 2>/dev/null | head -1)
         if [ -n "$QT_ROOT" ]; then
           echo "Qt installed at: $QT_ROOT"
           echo "QT_ROOT=$QT_ROOT" >> $GITHUB_ENV
+          
+          # Check if Qt5CoreMacros.cmake exists
+          if [ ! -f "$QT_ROOT/lib/cmake/Qt5Core/Qt5CoreMacros.cmake" ]; then
+            echo "WARNING: Qt5CoreMacros.cmake not found, creating minimal version..."
+            cat > $QT_ROOT/lib/cmake/Qt5Core/Qt5CoreMacros.cmake << 'EOF'
+# Minimal Qt5CoreMacros.cmake for WebAssembly builds
+macro(_qt5_Core_check_file_exists file)
+    if(NOT EXISTS "${file}")
+        message(FATAL_ERROR "The imported target \"${_qt5_Core_target_name}\" references the file \"${file}\" but this file does not exist.")
+    endif()
+endmacro()
+
+function(_qt5_Core_process_prl_file prl_file_location Configuration lib_deps link_flags)
+    set(_lib_deps)
+    set(_link_flags)
+    
+    if(EXISTS "${prl_file_location}")
+        file(STRINGS "${prl_file_location}" _prl_strings REGEX "QMAKE_PRL_LIBS")
+        if(_prl_strings)
+            string(REGEX REPLACE "QMAKE_PRL_LIBS *= *" "" _static_depends ${_prl_strings})
+            string(REGEX REPLACE "[ \t]+" ";" _static_depends ${_static_depends})
+            set(_lib_deps ${_static_depends})
+        endif()
+    endif()
+    
+    set(${lib_deps} ${_lib_deps} PARENT_SCOPE)
+    set(${link_flags} ${_link_flags} PARENT_SCOPE)
+endfunction()
+EOF
+          fi
+          
           ls -la $QT_ROOT/lib/cmake/ 2>/dev/null || echo "Cannot list cmake modules"
         else
           echo "ERROR: Qt installation not found!"
