@@ -3,7 +3,9 @@
 #include <QTextStream>
 #include <QDir>
 #include <QCoreApplication>
+#ifndef __EMSCRIPTEN__
 #include <QSettings>
+#endif
 
 QMap<QString, QString> Translations::loadFromFile(const QString &filename)
 {
@@ -27,6 +29,43 @@ QMap<QString, QString> Translations::loadFromFile(const QString &filename)
         return trans;  // Return empty map if file not found
     }
     
+#ifdef __EMSCRIPTEN__
+    // For WebAssembly, read INI file manually to avoid QSettings embind issues
+    QFile file(filePath);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+        in.setCodec("UTF-8");
+#else
+        in.setEncoding(QStringConverter::Utf8);
+#endif
+        QString currentGroup;
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            
+            // Skip empty lines and comments
+            if (line.isEmpty() || line.startsWith(';') || line.startsWith('#')) {
+                continue;
+            }
+            
+            // Check for group header [GroupName]
+            if (line.startsWith('[') && line.endsWith(']')) {
+                currentGroup = line.mid(1, line.length() - 2);
+                continue;
+            }
+            
+            // Parse key=value pairs
+            int equalPos = line.indexOf('=');
+            if (equalPos > 0) {
+                QString key = line.left(equalPos).trimmed();
+                QString value = line.mid(equalPos + 1).trimmed();
+                trans[key] = value;
+            }
+        }
+        file.close();
+    }
+#else
+    // For native builds, use QSettings
     QSettings settings(filePath, QSettings::IniFormat);
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     settings.setIniCodec("UTF-8");
@@ -42,6 +81,7 @@ QMap<QString, QString> Translations::loadFromFile(const QString &filename)
         }
         settings.endGroup();
     }
+#endif
     
     return trans;
 }
