@@ -230,8 +230,12 @@ jobs:
     - name: Install Qt 6 for WebAssembly
       run: |
         pip3 install aqtinstall==3.1.*
+        
+        # Install Qt 6.5.3 desktop version first (required for WebAssembly)
+        aqt install-qt linux desktop 6.5.3 gcc_64
+        
         # Install Qt 6.5.3 for WebAssembly (single-threaded)
-        aqt install-qt linux desktop 6.5.3 wasm_singlethread -m qtcharts qtnetworkauth
+        aqt install-qt linux desktop 6.5.3 wasm_singlethread
         
         QT_ROOT=$(find $PWD -type d -name "wasm_singlethread" 2>/dev/null | head -1)
         if [ -n "$QT_ROOT" ]; then

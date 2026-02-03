@@ -53,13 +53,14 @@ Major changes:
 - Upgrade Emscripten from 1.39.20 to 3.1.50
 - Use qt_add_executable() instead of add_executable()
 - Use qt-cmake for WebAssembly builds
+- Install desktop Qt first (required for WebAssembly)
+- Remove invalid module dependencies
 - Simplify WebAssembly configuration
-- Remove dummy config creation code
 
 Benefits:
 - Better WebAssembly stability
 - Improved rendering performance
-- Smaller binary size
+- Proper .wasm file generation (3-5 MB instead of 4 KB)
 - Better browser compatibility
 - More reliable builds
 
