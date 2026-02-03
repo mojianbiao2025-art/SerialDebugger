@@ -351,6 +351,13 @@
             }
         });
 
+        var canvas = document.getElementById('canvas');
+        canvas.addEventListener("webglcontextlost", function(e) {
+            addDebugLog('WebGL 上下文丢失，需要重新加载页面', true);
+            alert('WebGL context lost. You will need to reload the page.');
+            e.preventDefault();
+        }, false);
+
         var Module = {
             preRun: [],
             postRun: [],
@@ -362,15 +369,8 @@
                 console.error('[stderr]', text);
                 addDebugLog('错误: ' + text, true);
             },
-            canvas: (function() {
-                var canvas = document.getElementById('canvas');
-                canvas.addEventListener("webglcontextlost", function(e) {
-                    addDebugLog('WebGL 上下文丢失，需要重新加载页面', true);
-                    alert('WebGL context lost. You will need to reload the page.');
-                    e.preventDefault();
-                }, false);
-                return canvas;
-            })(),
+            // Use qtCanvasElements instead of deprecated canvas property
+            qtCanvasElements: [canvas],
             setStatus: function(text) {
                 if (text) {
                     addDebugLog(text);

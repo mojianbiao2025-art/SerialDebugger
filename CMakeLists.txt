@@ -115,7 +115,7 @@ if(EMSCRIPTEN)
     )
     # WebAssembly specific settings - minimal flags for stability
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 --bind"
+        LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 --bind -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','allocateUTF8'] -s EXPORTED_FUNCTIONS=['_malloc','_free','_webserial_onOpened_c','_webserial_onError_c','_webserial_onDataReceived_c']"
     )
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE
