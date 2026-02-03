@@ -2,27 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 
 project(SerialDebugger VERSION 1.0.0 LANGUAGES CXX)
 
-# WebAssembly specific configuration - MUST be before find_package
-if(EMSCRIPTEN)
-    # Set CMAKE_PREFIX_PATH to help find Qt modules
-    if(DEFINED ENV{QT_ROOT})
-        list(APPEND CMAKE_PREFIX_PATH 
-            "$ENV{QT_ROOT}"
-            "$ENV{QT_ROOT}/lib/cmake"
-            "$ENV{QT_ROOT}/lib/cmake/Qt5"
-            "$ENV{QT_ROOT}/lib/cmake/Qt5Core"
-            "$ENV{QT_ROOT}/lib/cmake/Qt5Gui"
-            "$ENV{QT_ROOT}/lib/cmake/Qt5Widgets"
-            "$ENV{QT_ROOT}/lib/cmake/Qt6"
-            "$ENV{QT_ROOT}/lib/cmake/Qt6Core"
-            "$ENV{QT_ROOT}/lib/cmake/Qt6Gui"
-            "$ENV{QT_ROOT}/lib/cmake/Qt6Widgets"
-        )
-        message(STATUS "Using Qt from: $ENV{QT_ROOT}")
-        message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
-    endif()
-endif()
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -40,35 +19,16 @@ if(MSVC)
     add_compile_options(/utf-8)
 endif()
 
-# Try to find Qt6 first, fall back to Qt5
+# Find Qt6
 if(EMSCRIPTEN)
-    message(STATUS "Searching for Qt6 (EMSCRIPTEN mode)...")
-    message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
-    find_package(Qt6 QUIET COMPONENTS Core Gui Widgets)
-    if(NOT Qt6_FOUND)
-        message(STATUS "Qt6 not found, trying Qt5...")
-        find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
-        set(QT_VERSION_MAJOR 5)
-    else()
-        message(STATUS "Qt6 found!")
-        set(QT_VERSION_MAJOR 6)
-    endif()
+    message(STATUS "Building for WebAssembly with Qt6")
+    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 else()
-    message(STATUS "Searching for Qt6 (non-EMSCRIPTEN mode)...")
-    message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
-    message(STATUS "QT_HOST_PATH: $ENV{QT_HOST_PATH}")
-    find_package(Qt6 QUIET COMPONENTS Core Gui Widgets SerialPort)
-    if(NOT Qt6_FOUND)
-        message(STATUS "Qt6 not found, trying Qt5...")
-        find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets SerialPort)
-        set(QT_VERSION_MAJOR 5)
-    else()
-        message(STATUS "Qt6 found!")
-        set(QT_VERSION_MAJOR 6)
-    endif()
+    message(STATUS "Building for native platform with Qt6")
+    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets SerialPort)
 endif()
 
-message(STATUS "Using Qt${QT_VERSION_MAJOR}")
+message(STATUS "Using Qt ${Qt6_VERSION}")
 
 # Source files
 set(PROJECT_SOURCES
@@ -97,32 +57,32 @@ if(WIN32)
 endif()
 
 # Create executable
-if(ANDROID AND QT_VERSION_MAJOR EQUAL 6)
-    # Qt6 Android requires qt_add_executable
+if(ANDROID)
     qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 elseif(WIN32)
-    add_executable(${PROJECT_NAME} WIN32 ${PROJECT_SOURCES})
+    qt_add_executable(${PROJECT_NAME} WIN32 ${PROJECT_SOURCES})
 else()
-    add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+    qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 endif()
 
 # Link Qt libraries
 if(EMSCRIPTEN)
     target_link_libraries(${PROJECT_NAME} PRIVATE
-        Qt${QT_VERSION_MAJOR}::Core
-        Qt${QT_VERSION_MAJOR}::Gui
-        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
     )
-    # WebAssembly specific settings - enable WebGL and filesystem
+    # Qt 6 WebAssembly settings
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 --bind -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','allocateUTF8'] -s EXPORTED_FUNCTIONS=['_malloc','_free','_webserial_onOpened_c','_webserial_onError_c','_webserial_onDataReceived_c'] -s FORCE_FILESYSTEM=1 -s FETCH=1 -s FULL_ES2=1 -s USE_WEBGL2=1 -s MAX_WEBGL_VERSION=2 -s MIN_WEBGL_VERSION=1"
+        QT_WASM_PTHREAD_POOL_SIZE 0
+        QT_WASM_INITIAL_MEMORY 128MB
     )
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE
-        Qt${QT_VERSION_MAJOR}::Core
-        Qt${QT_VERSION_MAJOR}::Gui
-        Qt${QT_VERSION_MAJOR}::Widgets
-        Qt${QT_VERSION_MAJOR}::SerialPort
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::SerialPort
     )
     
     # Android specific: link zlib
@@ -144,7 +104,7 @@ if(WIN32)
 endif()
 
 # Android specific configuration for Qt6
-if(ANDROID AND QT_VERSION_MAJOR EQUAL 6)
+if(ANDROID)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/android
     )

@@ -224,18 +224,19 @@ jobs:
         cd $HOME
         git clone https://github.com/emscripten-core/emsdk.git
         cd emsdk
-        ./emsdk install 1.39.20
-        ./emsdk activate 1.39.20
+        ./emsdk install 3.1.50
+        ./emsdk activate 3.1.50
         
-    - name: Install Qt for WebAssembly
+    - name: Install Qt 6 for WebAssembly
       run: |
         pip3 install aqtinstall==3.1.*
-        # Install Qt with all available modules
-        aqt install-qt linux desktop 5.15.2 wasm_32 -m qtcharts qtnetworkauth qtsvg || aqt install-qt linux desktop 5.15.2 wasm_32 || true
+        # Install Qt 6.5.3 for WebAssembly (single-threaded)
+        aqt install-qt linux desktop 6.5.3 wasm_singlethread -m qtcharts qtnetworkauth
         
-        QT_ROOT=$(find $PWD -type d -name "wasm_32" 2>/dev/null | head -1)
+        QT_ROOT=$(find $PWD -type d -name "wasm_singlethread" 2>/dev/null | head -1)
         if [ -n "$QT_ROOT" ]; then
           echo "Qt installed at: $QT_ROOT"
+          echo "QT_ROOT=$QT_ROOT" >> $GITHUB_ENV
           ls -la $QT_ROOT/lib/cmake/ 2>/dev/null || echo "Cannot list cmake modules"
         else
           echo "ERROR: Qt installation not found!"
@@ -246,98 +247,14 @@ jobs:
       run: |
         source $HOME/emsdk/emsdk_env.sh
         
-        QT_ROOT=$(find $PWD -type d -name "wasm_32" 2>/dev/null | head -1)
-        echo "Found Qt at: $QT_ROOT"
-        
-        if [ -z "$QT_ROOT" ]; then
-          echo "ERROR: Qt installation not found!"
-          exit 1
-        fi
-        
-        export Qt5_DIR=$QT_ROOT/lib/cmake/Qt5
+        echo "Qt root: $QT_ROOT"
+        export CMAKE_PREFIX_PATH=$QT_ROOT
         export PATH=$QT_ROOT/bin:$PATH
-        
-        # Create dummy configs using the same method as wasm-build-success.yml
-        if [ ! -d "$QT_ROOT/lib/cmake/Qt5Svg" ]; then
-          echo "Creating dummy Qt5Svg config..."
-          mkdir -p $QT_ROOT/lib/cmake/Qt5Svg
-          echo 'add_library(Qt5::Svg INTERFACE IMPORTED)' > $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake
-          echo 'set(Qt5Svg_FOUND TRUE)' >> $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake
-          echo 'set(Qt5Svg_VERSION_STRING "1.0.0")' >> $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake
-          echo 'set(PACKAGE_VERSION "1.0.0")' > $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfigVersion.cmake
-          echo 'set(PACKAGE_VERSION_COMPATIBLE TRUE)' >> $QT_ROOT/lib/cmake/Qt5Svg/Qt5SvgConfigVersion.cmake
-        fi
-        
-        if [ ! -d "$QT_ROOT/lib/cmake/Qt5Zlib" ]; then
-          echo "Creating dummy Qt5Zlib config..."
-          mkdir -p $QT_ROOT/lib/cmake/Qt5Zlib
-          echo 'add_library(Qt5::Zlib INTERFACE IMPORTED)' > $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfig.cmake
-          echo 'set(Qt5Zlib_FOUND TRUE)' >> $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfig.cmake
-          echo 'set(Qt5Zlib_VERSION_STRING "1.0.0")' >> $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfig.cmake
-          echo 'set(PACKAGE_VERSION "1.0.0")' > $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfigVersion.cmake
-          echo 'set(PACKAGE_VERSION_COMPATIBLE TRUE)' >> $QT_ROOT/lib/cmake/Qt5Zlib/Qt5ZlibConfigVersion.cmake
-        fi
-        
-        if [ ! -d "$QT_ROOT/lib/cmake/Qt5Network" ]; then
-          echo "Creating dummy Qt5Network config..."
-          mkdir -p $QT_ROOT/lib/cmake/Qt5Network
-          echo 'add_library(Qt5::Network INTERFACE IMPORTED)' > $QT_ROOT/lib/cmake/Qt5Network/Qt5NetworkConfig.cmake
-          echo 'set(Qt5Network_FOUND TRUE)' >> $QT_ROOT/lib/cmake/Qt5Network/Qt5NetworkConfig.cmake
-          echo 'set(Qt5Network_VERSION_STRING "1.0.0")' >> $QT_ROOT/lib/cmake/Qt5Network/Qt5NetworkConfig.cmake
-          echo 'set(PACKAGE_VERSION "1.0.0")' > $QT_ROOT/lib/cmake/Qt5Network/Qt5NetworkConfigVersion.cmake
-          echo 'set(PACKAGE_VERSION_COMPATIBLE TRUE)' >> $QT_ROOT/lib/cmake/Qt5Network/Qt5NetworkConfigVersion.cmake
-        fi
-        
-        if [ ! -d "$QT_ROOT/lib/cmake/Qt5EventDispatcherSupport" ]; then
-          echo "Creating dummy Qt5EventDispatcherSupport config..."
-          mkdir -p $QT_ROOT/lib/cmake/Qt5EventDispatcherSupport
-          echo 'add_library(Qt5::EventDispatcherSupport INTERFACE IMPORTED)' > $QT_ROOT/lib/cmake/Qt5EventDispatcherSupport/Qt5EventDispatcherSupportConfig.cmake
-          echo 'set(Qt5EventDispatcherSupport_FOUND TRUE)' >> $QT_ROOT/lib/cmake/Qt5EventDispatcherSupport/Qt5EventDispatcherSupportConfig.cmake
-          echo 'set(Qt5EventDispatcherSupport_VERSION_STRING "1.0.0")' >> $QT_ROOT/lib/cmake/Qt5EventDispatcherSupport/Qt5EventDispatcherSupportConfig.cmake
-          echo 'set(PACKAGE_VERSION "1.0.0")' > $QT_ROOT/lib/cmake/Qt5EventDispatcherSupport/Qt5EventDispatcherSupportConfigVersion.cmake
-          echo 'set(PACKAGE_VERSION_COMPATIBLE TRUE)' >> $QT_ROOT/lib/cmake/Qt5EventDispatcherSupport/Qt5EventDispatcherSupportConfigVersion.cmake
-        fi
-        
-        if [ ! -d "$QT_ROOT/lib/cmake/Qt5FontDatabaseSupport" ]; then
-          echo "Creating dummy Qt5FontDatabaseSupport config..."
-          mkdir -p $QT_ROOT/lib/cmake/Qt5FontDatabaseSupport
-          echo 'add_library(Qt5::FontDatabaseSupport INTERFACE IMPORTED)' > $QT_ROOT/lib/cmake/Qt5FontDatabaseSupport/Qt5FontDatabaseSupportConfig.cmake
-          echo 'set(Qt5FontDatabaseSupport_FOUND TRUE)' >> $QT_ROOT/lib/cmake/Qt5FontDatabaseSupport/Qt5FontDatabaseSupportConfig.cmake
-          echo 'set(Qt5FontDatabaseSupport_VERSION_STRING "1.0.0")' >> $QT_ROOT/lib/cmake/Qt5FontDatabaseSupport/Qt5FontDatabaseSupportConfig.cmake
-          echo 'set(PACKAGE_VERSION "1.0.0")' > $QT_ROOT/lib/cmake/Qt5FontDatabaseSupport/Qt5FontDatabaseSupportConfigVersion.cmake
-          echo 'set(PACKAGE_VERSION_COMPATIBLE TRUE)' >> $QT_ROOT/lib/cmake/Qt5FontDatabaseSupport/Qt5FontDatabaseSupportConfigVersion.cmake
-        fi
-        
-        if [ ! -d "$QT_ROOT/lib/cmake/Qt5EglSupport" ]; then
-          echo "Creating dummy Qt5EglSupport config..."
-          mkdir -p $QT_ROOT/lib/cmake/Qt5EglSupport
-          echo 'add_library(Qt5::EglSupport INTERFACE IMPORTED)' > $QT_ROOT/lib/cmake/Qt5EglSupport/Qt5EglSupportConfig.cmake
-          echo 'set(Qt5EglSupport_FOUND TRUE)' >> $QT_ROOT/lib/cmake/Qt5EglSupport/Qt5EglSupportConfig.cmake
-          echo 'set(Qt5EglSupport_VERSION_STRING "1.0.0")' >> $QT_ROOT/lib/cmake/Qt5EglSupport/Qt5EglSupportConfig.cmake
-          echo 'set(PACKAGE_VERSION "1.0.0")' > $QT_ROOT/lib/cmake/Qt5EglSupport/Qt5EglSupportConfigVersion.cmake
-          echo 'set(PACKAGE_VERSION_COMPATIBLE TRUE)' >> $QT_ROOT/lib/cmake/Qt5EglSupport/Qt5EglSupportConfigVersion.cmake
-        fi
         
         mkdir build-wasm
         cd build-wasm
         
-        export QT_ROOT=$QT_ROOT
-        
-        emcmake cmake .. \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_PREFIX_PATH="$QT_ROOT;$QT_ROOT/lib/cmake" \
-          -DQt5_DIR="$QT_ROOT/lib/cmake/Qt5" \
-          -DQt5Core_DIR="$QT_ROOT/lib/cmake/Qt5Core" \
-          -DQt5Gui_DIR="$QT_ROOT/lib/cmake/Qt5Gui" \
-          -DQt5Widgets_DIR="$QT_ROOT/lib/cmake/Qt5Widgets" \
-          -DQt5Svg_DIR="$QT_ROOT/lib/cmake/Qt5Svg" \
-          -DQt5Zlib_DIR="$QT_ROOT/lib/cmake/Qt5Zlib" \
-          -DQt5Network_DIR="$QT_ROOT/lib/cmake/Qt5Network" \
-          -DQt5EventDispatcherSupport_DIR="$QT_ROOT/lib/cmake/Qt5EventDispatcherSupport" \
-          -DQt5FontDatabaseSupport_DIR="$QT_ROOT/lib/cmake/Qt5FontDatabaseSupport" \
-          -DQt5EglSupport_DIR="$QT_ROOT/lib/cmake/Qt5EglSupport" \
-          -G Ninja
-          
+        qt-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
         cmake --build . --config Release -j2
         
     - name: Prepare deployment
