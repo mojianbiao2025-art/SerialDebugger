@@ -272,7 +272,7 @@ jobs:
         
         # Fix Qt5Config.cmake to include Qt5CoreMacros.cmake before using it
         echo "Patching Qt5Config.cmake..."
-        sed -i '1i include(${CMAKE_CURRENT_LIST_DIR}/Qt5Core/Qt5CoreMacros.cmake)' $QT_ROOT/lib/cmake/Qt5/Qt5Config.cmake
+        sed -i '1i include(${CMAKE_CURRENT_LIST_DIR}/../Qt5Core/Qt5CoreMacros.cmake)' $QT_ROOT/lib/cmake/Qt5/Qt5Config.cmake
         
         echo "Checking Qt5CoreMacros.cmake:"
         ls -la $QT_ROOT/lib/cmake/Qt5Core/Qt5CoreMacros.cmake || echo "File not found!"
