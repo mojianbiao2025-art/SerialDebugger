@@ -19,16 +19,36 @@ if(MSVC)
     add_compile_options(/utf-8)
 endif()
 
-# Find Qt6
+# Find Qt (support both Qt5 and Qt6)
 if(EMSCRIPTEN)
-    message(STATUS "Building for WebAssembly with Qt6")
-    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+    # For WebAssembly, try Qt5 first (more stable), then Qt6
+    find_package(Qt5 QUIET COMPONENTS Core Gui Widgets)
+    if(Qt5_FOUND)
+        message(STATUS "Building for WebAssembly with Qt5")
+        set(QT_VERSION_MAJOR 5)
+    else()
+        find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+        message(STATUS "Building for WebAssembly with Qt6")
+        set(QT_VERSION_MAJOR 6)
+    endif()
 else()
-    message(STATUS "Building for native platform with Qt6")
-    find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets SerialPort)
+    # For native platforms, try Qt6 first, then Qt5
+    find_package(Qt6 QUIET COMPONENTS Core Gui Widgets SerialPort)
+    if(Qt6_FOUND)
+        message(STATUS "Building for native platform with Qt6")
+        set(QT_VERSION_MAJOR 6)
+    else()
+        find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets SerialPort)
+        message(STATUS "Building for native platform with Qt5")
+        set(QT_VERSION_MAJOR 5)
+    endif()
 endif()
 
-message(STATUS "Using Qt ${Qt6_VERSION}")
+if(QT_VERSION_MAJOR EQUAL 6)
+    message(STATUS "Using Qt ${Qt6_VERSION}")
+else()
+    message(STATUS "Using Qt ${Qt5_VERSION}")
+endif()
 
 # Source files
 set(PROJECT_SOURCES
@@ -58,32 +78,65 @@ endif()
 
 # Create executable
 if(ANDROID)
-    qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+    if(QT_VERSION_MAJOR EQUAL 6)
+        qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+    else()
+        add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+    endif()
 elseif(WIN32)
-    qt_add_executable(${PROJECT_NAME} WIN32 ${PROJECT_SOURCES})
+    if(QT_VERSION_MAJOR EQUAL 6)
+        qt_add_executable(${PROJECT_NAME} WIN32 ${PROJECT_SOURCES})
+    else()
+        add_executable(${PROJECT_NAME} WIN32 ${PROJECT_SOURCES})
+    endif()
 else()
-    qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+    if(QT_VERSION_MAJOR EQUAL 6)
+        qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+    else()
+        add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+    endif()
 endif()
 
 # Link Qt libraries
 if(EMSCRIPTEN)
-    target_link_libraries(${PROJECT_NAME} PRIVATE
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Widgets
-    )
-    # Qt 6 WebAssembly settings
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        QT_WASM_PTHREAD_POOL_SIZE 0
-        QT_WASM_INITIAL_MEMORY 128MB
-    )
+    if(QT_VERSION_MAJOR EQUAL 6)
+        target_link_libraries(${PROJECT_NAME} PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Widgets
+        )
+        # Qt 6 WebAssembly settings
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            QT_WASM_PTHREAD_POOL_SIZE 0
+            QT_WASM_INITIAL_MEMORY 128MB
+        )
+    else()
+        target_link_libraries(${PROJECT_NAME} PRIVATE
+            Qt5::Core
+            Qt5::Gui
+            Qt5::Widgets
+        )
+        # Qt 5 WebAssembly settings
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            LINK_FLAGS "--bind"
+        )
+    endif()
 else()
-    target_link_libraries(${PROJECT_NAME} PRIVATE
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Widgets
-        Qt6::SerialPort
-    )
+    if(QT_VERSION_MAJOR EQUAL 6)
+        target_link_libraries(${PROJECT_NAME} PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Widgets
+            Qt6::SerialPort
+        )
+    else()
+        target_link_libraries(${PROJECT_NAME} PRIVATE
+            Qt5::Core
+            Qt5::Gui
+            Qt5::Widgets
+            Qt5::SerialPort
+        )
+    endif()
     
     # Android specific: link zlib
     if(ANDROID)
@@ -103,11 +156,17 @@ if(WIN32)
     )
 endif()
 
-# Android specific configuration for Qt6
+# Android specific configuration
 if(ANDROID)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/android
-    )
+    if(QT_VERSION_MAJOR EQUAL 6)
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/android
+        )
+    else()
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/android
+        )
+    endif()
 endif()
 
 # Install rules

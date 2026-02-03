@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ========================================
-echo Qt 6 迁移 - 提交脚本
+echo WebAssembly 构建修复 - 提交脚本
 echo ========================================
 echo.
 
@@ -17,27 +17,28 @@ git status
 
 echo.
 echo ========================================
-echo 迁移内容摘要：
+echo 修复内容摘要：
 echo ========================================
 echo 1. CMakeLists.txt
-echo    - 从 Qt 5.15.2 迁移到 Qt 6.5.3
-echo    - 使用 qt_add_executable()
-echo    - 简化 WebAssembly 配置
+echo    - 支持 Qt 5 和 Qt 6
+echo    - WebAssembly 使用 Qt 5（更稳定）
+echo    - Android 使用 Qt 6（更好支持）
+echo    - 添加 --bind 标志
 echo.
 echo 2. GitHub Actions
-echo    - Emscripten: 1.39.20 → 3.1.50
-echo    - Qt: 5.15.2 → 6.5.3
-echo    - 使用 qt-cmake 构建
+echo    - WebAssembly: Qt 5.15.2 + Emscripten 1.39.20
+echo    - Android: Qt 6.5.3
+echo    - 创建缺失模块的虚拟配置
 echo.
 echo 3. 预期改进
-echo    - 更好的 WebAssembly 支持
-echo    - 更稳定的渲染
-echo    - 更小的文件大小
+echo    - 避免 Qt 6 embind 链接问题
+echo    - 更稳定的 WebAssembly 构建
 echo    - .wasm 文件应该是 3-5 MB（不是 4 KB）
+echo    - 更好的浏览器兼容性
 echo ========================================
 echo.
 
-set /p confirm="确认提交 Qt 6 迁移吗？(Y/N): "
+set /p confirm="确认提交 WebAssembly 构建修复吗？(Y/N): "
 if /i "%confirm%" NEQ "Y" (
     echo 取消提交。
     pause
@@ -46,23 +47,23 @@ if /i "%confirm%" NEQ "Y" (
 
 echo.
 echo 正在提交...
-git commit -m "Migrate to Qt 6.5.3 for better WebAssembly support
+git commit -m "Fix WebAssembly build with Qt 5 and proper embind linking
 
 Major changes:
-- Upgrade from Qt 5.15.2 to Qt 6.5.3
-- Upgrade Emscripten from 1.39.20 to 3.1.50
-- Use qt_add_executable() instead of add_executable()
-- Use qt-cmake for WebAssembly builds
-- Install desktop Qt first (required for WebAssembly)
-- Remove invalid module dependencies
-- Simplify WebAssembly configuration
+- Keep Qt 5.15.2 for WebAssembly (more stable than Qt 6)
+- Keep Qt 6.5.3 for Android (better support)
+- Use Emscripten 1.39.20 (matches Qt 5.15.2)
+- Add --bind flag for proper embind linking
+- Support both Qt 5 and Qt 6 in CMakeLists.txt
+- Create dummy configs for missing Qt modules
+- Simplify build process
 
 Benefits:
-- Better WebAssembly stability
-- Improved rendering performance
+- Avoid Qt 6 embind linking issues
+- More stable WebAssembly builds
 - Proper .wasm file generation (3-5 MB instead of 4 KB)
 - Better browser compatibility
-- More reliable builds
+- Proven configuration
 
 This should fix the issue where .wasm file was only 4 KB."
 
@@ -100,15 +101,15 @@ if %errorlevel% neq 0 (
 
 echo.
 echo ========================================
-echo ✓ Qt 6 迁移完成！
+echo ✓ WebAssembly 构建修复完成！
 echo ========================================
 echo.
 echo 下一步：
 echo 1. 访问 GitHub Actions 查看构建状态
 echo    https://github.com/mojianbiao2025-art/SerialDebugger/actions
 echo.
-echo 2. 等待构建完成（约 15-20 分钟）
-echo    Qt 6 构建可能比 Qt 5 稍慢，但更可靠
+echo 2. 等待构建完成（约 10-15 分钟）
+echo    Qt 5 构建比 Qt 6 更快更稳定
 echo.
 echo 3. 检查构建日志
 echo    确认 .wasm 文件大小是 3-5 MB（不是 4 KB）
