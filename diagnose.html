@@ -66,6 +66,12 @@
         <button onclick="clearCache()">清除缓存并刷新</button>
         <button onclick="window.location.href='test-minimal.html'">打开测试页面</button>
         <button onclick="window.location.href='index.html'">打开主页面</button>
+        <button onclick="window.location.href='index-simple.html'">简化主页面</button>
+        <button onclick="window.location.href='test-load.html'">加载测试</button>
+        <button onclick="window.location.href='quick-diagnosis.html'">快速诊断</button>
+        <button onclick="window.location.href='test-qt-render.html'">Qt渲染测试</button>
+        <button onclick="window.location.href='test-wasm-loading.html'">WASM加载测试</button>
+        <button onclick="window.location.href='test-webgl.html'">WebGL测试</button>
     </div>
 
     <script>
@@ -102,7 +108,13 @@
                 'SerialDebugger.js',
                 'SerialDebugger.wasm',
                 'index.html',
-                'test-minimal.html'
+                'index-simple.html',
+                'test-minimal.html',
+                'test-load.html',
+                'quick-diagnosis.html',
+                'test-qt-render.html',
+                'test-wasm-loading.html',
+                'test-webgl.html'
             ];
             
             let html = '<pre>';

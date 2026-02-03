@@ -314,6 +314,7 @@ jobs:
         cp index.html deploy/
         cp index-simple.html deploy/
         cp test-minimal.html deploy/
+        cp test-load.html deploy/
         cp diagnose.html deploy/
         cp test-wasm-loading.html deploy/
         cp test-qt-render.html deploy/
