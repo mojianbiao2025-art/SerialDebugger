@@ -237,13 +237,19 @@ jobs:
         # Install Qt 6.5.3 for WebAssembly (single-threaded)
         aqt install-qt linux desktop 6.5.3 wasm_singlethread
         
+        QT_HOST_PATH=$(find $PWD -type d -name "gcc_64" 2>/dev/null | head -1)
         QT_ROOT=$(find $PWD -type d -name "wasm_singlethread" 2>/dev/null | head -1)
-        if [ -n "$QT_ROOT" ]; then
-          echo "Qt installed at: $QT_ROOT"
+        
+        if [ -n "$QT_ROOT" ] && [ -n "$QT_HOST_PATH" ]; then
+          echo "Qt WebAssembly installed at: $QT_ROOT"
+          echo "Qt Host installed at: $QT_HOST_PATH"
           echo "QT_ROOT=$QT_ROOT" >> $GITHUB_ENV
+          echo "QT_HOST_PATH=$QT_HOST_PATH" >> $GITHUB_ENV
           ls -la $QT_ROOT/lib/cmake/ 2>/dev/null || echo "Cannot list cmake modules"
         else
           echo "ERROR: Qt installation not found!"
+          echo "QT_ROOT: $QT_ROOT"
+          echo "QT_HOST_PATH: $QT_HOST_PATH"
           exit 1
         fi
         
@@ -251,7 +257,8 @@ jobs:
       run: |
         source $HOME/emsdk/emsdk_env.sh
         
-        echo "Qt root: $QT_ROOT"
+        echo "Qt WebAssembly: $QT_ROOT"
+        echo "Qt Host: $QT_HOST_PATH"
         export CMAKE_PREFIX_PATH=$QT_ROOT
         export PATH=$QT_ROOT/bin:$PATH
         
@@ -261,7 +268,11 @@ jobs:
         mkdir build-wasm
         cd build-wasm
         
-        qt-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+        qt-cmake .. \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DQT_HOST_PATH=$QT_HOST_PATH
+        
         cmake --build . --config Release -j2
         
     - name: Prepare deployment
