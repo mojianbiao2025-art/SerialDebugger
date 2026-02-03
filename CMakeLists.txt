@@ -118,7 +118,7 @@ if(EMSCRIPTEN)
         )
         # Qt 5 WebAssembly settings
         set_target_properties(${PROJECT_NAME} PROPERTIES
-            LINK_FLAGS "--bind"
+            LINK_FLAGS "--bind -s EXPORTED_FUNCTIONS=['_main','_malloc','_free'] -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','stringToUTF8'] -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s EXPORT_NAME='createQtAppInstance'"
         )
     endif()
 else()
