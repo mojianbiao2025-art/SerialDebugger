@@ -4,27 +4,59 @@
     <meta charset="UTF-8">
     <title>快速诊断</title>
     <style>
-        body { font-family: Arial; margin: 20px; }
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
         .result { padding: 10px; margin: 10px 0; border-radius: 4px; }
         .success { background: #d4edda; border-left: 4px solid #28a745; }
         .error { background: #f8d7da; border-left: 4px solid #dc3545; }
         .warning { background: #fff3cd; border-left: 4px solid #ffc107; }
-        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+        .info { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+        button { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            font-size: 16px; 
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        .section { 
+            background: white; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav-buttons { margin: 20px 0; }
+        .nav-buttons button { background: #28a745; }
+        .nav-buttons button:hover { background: #218838; }
     </style>
 </head>
 <body>
-    <h1>Qt WebAssembly 快速诊断</h1>
+    <h1>🔍 Qt WebAssembly 快速诊断</h1>
     
-    <button onclick="checkAll()">运行所有检查</button>
-    <button onclick="clearResults()">清除结果</button>
+    <div class="section">
+        <button onclick="checkAll()">🔄 运行所有检查</button>
+        <button onclick="clearResults()">🗑️ 清除结果</button>
+        <div id="results"></div>
+    </div>
     
-    <div id="results"></div>
+    <div class="section nav-buttons">
+        <h3>📄 测试页面导航</h3>
+        <button onclick="window.location.href='index.html'">主页面</button>
+        <button onclick="window.location.href='index-simple.html'">简化主页面</button>
+        <button onclick="window.location.href='test-minimal.html'">最小测试</button>
+        <button onclick="window.location.href='test-load.html'">加载测试</button>
+        <button onclick="window.location.href='diagnose.html'">完整诊断</button>
+    </div>
     
     <script>
         function addResult(message, type) {
             var div = document.createElement('div');
             div.className = 'result ' + type;
-            div.textContent = message;
+            div.innerHTML = message;
             document.getElementById('results').appendChild(div);
         }
         
@@ -32,77 +64,100 @@
             document.getElementById('results').innerHTML = '';
         }
         
-        function checkAll() {
+        async function checkAll() {
             clearResults();
+            addResult('🚀 开始诊断...', 'info');
             
-            // 1. 检查 WebGL
-            var canvas = document.createElement('canvas');
-            var gl = canvas.getContext('webgl');
-            if (gl) {
-                addResult('✅ WebGL 可用: ' + gl.getParameter(gl.VERSION), 'success');
+            // 1. 检查浏览器支持
+            addResult('<h3>1️⃣ 浏览器支持检查</h3>', 'info');
+            
+            if (typeof WebAssembly !== 'undefined') {
+                addResult('✅ WebAssembly 支持', 'success');
             } else {
-                addResult('❌ WebGL 不可用', 'error');
+                addResult('❌ WebAssembly 不支持', 'error');
                 return;
             }
             
-            // 2. 检查文件
+            if ('serial' in navigator) {
+                addResult('✅ Web Serial API 支持', 'success');
+            } else {
+                addResult('⚠️ Web Serial API 不支持（需要 Chrome 89+）', 'warning');
+            }
+            
+            // 检查 WebGL
+            var canvas = document.createElement('canvas');
+            var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (gl) {
+                var version = gl.getParameter(gl.VERSION);
+                var renderer = gl.getParameter(gl.RENDERER);
+                addResult('✅ WebGL 可用: ' + version, 'success');
+                addResult('   渲染器: ' + renderer, 'info');
+            } else {
+                addResult('❌ WebGL 不可用', 'error');
+            }
+            
+            // 2. 检查关键文件
+            addResult('<h3>2️⃣ 文件检查</h3>', 'info');
+            
             var files = [
-                'SerialDebugger.js',
-                'SerialDebugger.wasm',
-                'index.html'
+                { name: 'SerialDebugger.wasm', critical: true, minSize: 4000000 },
+                { name: 'SerialDebugger.js', critical: true, minSize: 50000 },
+                { name: 'index.html', critical: false },
+                { name: 'index-simple.html', critical: false },
+                { name: 'test-minimal.html', critical: false }
             ];
             
-            files.forEach(function(file) {
-                fetch(file, { method: 'HEAD' })
-                    .then(function(response) {
-                        if (response.ok) {
-                            var size = response.headers.get('content-length');
-                            addResult('✅ ' + file + ' 存在 (' + (size/1024).toFixed(2) + ' KB)', 'success');
+            for (const file of files) {
+                try {
+                    const response = await fetch(file.name, { method: 'HEAD' });
+                    if (response.ok) {
+                        const size = parseInt(response.headers.get('content-length') || '0');
+                        const sizeStr = size > 1024*1024 ? 
+                            (size/1024/1024).toFixed(2) + ' MB' : 
+                            (size/1024).toFixed(2) + ' KB';
+                        
+                        if (file.minSize && size < file.minSize) {
+                            addResult('⚠️ ' + file.name + ' 存在但太小 (' + sizeStr + ')', 'warning');
+                            addResult('   预期至少 ' + (file.minSize/1024/1024).toFixed(2) + ' MB', 'warning');
                         } else {
-                            addResult('❌ ' + file + ' 不存在 (HTTP ' + response.status + ')', 'error');
+                            addResult('✅ ' + file.name + ' 存在 (' + sizeStr + ')', 'success');
                         }
-                    })
-                    .catch(function(error) {
-                        addResult('❌ ' + file + ' 加载失败: ' + error.message, 'error');
-                    });
-            });
-            
-            // 3. 检查 Module
-            setTimeout(function() {
-                if (typeof Module !== 'undefined') {
-                    addResult('✅ Module 对象存在', 'success');
-                    if (Module.qtCanvasElements) {
-                        addResult('✅ qtCanvasElements 已设置', 'success');
                     } else {
-                        addResult('❌ qtCanvasElements 未设置', 'error');
+                        const msg = '❌ ' + file.name + ' 不存在 (HTTP ' + response.status + ')';
+                        addResult(msg, file.critical ? 'error' : 'warning');
                     }
-                } else {
-                    addResult('⚠️ Module 对象不存在（可能还未加载）', 'warning');
+                } catch (error) {
+                    const msg = '❌ ' + file.name + ' 加载失败: ' + error.message;
+                    addResult(msg, file.critical ? 'error' : 'warning');
                 }
-            }, 2000);
+            }
             
-            // 4. 检查 Canvas
-            setTimeout(function() {
-                var canvas = document.getElementById('canvas');
-                if (canvas) {
-                    addResult('✅ Canvas 元素存在', 'success');
-                    addResult('Canvas 尺寸: ' + canvas.width + 'x' + canvas.height, 'success');
-                    
-                    // 检查是否有内容（不获取 context，避免干扰）
-                    var rect = canvas.getBoundingClientRect();
-                    if (rect.width > 0 && rect.height > 0) {
-                        addResult('✅ Canvas 可见', 'success');
-                    } else {
-                        addResult('❌ Canvas 不可见', 'error');
-                    }
-                } else {
-                    addResult('❌ Canvas 元素不存在', 'error');
-                }
-            }, 3000);
+            // 3. 网络状态
+            addResult('<h3>3️⃣ 网络状态</h3>', 'info');
+            addResult('在线状态: ' + (navigator.onLine ? '✅ 在线' : '❌ 离线'), 
+                navigator.onLine ? 'success' : 'error');
+            addResult('协议: ' + window.location.protocol, 'info');
+            addResult('主机: ' + window.location.host, 'info');
+            
+            // 4. 建议
+            addResult('<h3>4️⃣ 诊断结果</h3>', 'info');
+            
+            // 检查是否所有关键文件都正常
+            const wasmResponse = await fetch('SerialDebugger.wasm', { method: 'HEAD' });
+            const wasmSize = parseInt(wasmResponse.headers.get('content-length') || '0');
+            
+            if (wasmSize > 4000000) {
+                addResult('✅ 所有关键文件正常！', 'success');
+                addResult('📝 建议：访问 <a href="test-minimal.html">test-minimal.html</a> 测试应用加载', 'info');
+                addResult('📝 如果应用卡住，检查浏览器控制台是否有 "Module.ccall 未定义" 错误', 'info');
+            } else {
+                addResult('❌ .wasm 文件太小，构建可能失败', 'error');
+                addResult('📝 建议：检查 GitHub Actions 构建日志', 'error');
+            }
         }
         
         // 自动运行
-        setTimeout(checkAll, 1000);
+        setTimeout(checkAll, 500);
     </script>
 </body>
 </html>

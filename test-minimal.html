@@ -112,8 +112,21 @@
             onRuntimeInitialized: function() {
                 log('✅ WebAssembly 运行时初始化成功', 'success');
                 
+                // Check Module exports
+                log('检查 Module 导出...', 'info');
+                log('Module.ccall: ' + (typeof Module.ccall !== 'undefined' ? '✅ 已定义' : '❌ 未定义'), 
+                    typeof Module.ccall !== 'undefined' ? 'success' : 'error');
+                log('Module.cwrap: ' + (typeof Module.cwrap !== 'undefined' ? '✅ 已定义' : '❌ 未定义'), 
+                    typeof Module.cwrap !== 'undefined' ? 'success' : 'error');
+                log('Module.UTF8ToString: ' + (typeof Module.UTF8ToString !== 'undefined' ? '✅ 已定义' : '❌ 未定义'), 
+                    typeof Module.UTF8ToString !== 'undefined' ? 'success' : 'error');
+                
                 // Check canvas after a delay
                 setTimeout(function() {
+                    log('检查 Canvas 状态...', 'info');
+                    log('Canvas 宽度: ' + canvas.width + ', 高度: ' + canvas.height, 'info');
+                    log('Canvas 显示: ' + canvas.style.display, 'info');
+                    
                     var ctx = canvas.getContext('2d');
                     if (ctx) {
                         var imageData = ctx.getImageData(0, 0, 1, 1);
@@ -121,9 +134,34 @@
                             log('✅ Canvas 有内容！', 'success');
                         } else {
                             log('⚠️ Canvas 仍然空白', 'warning');
+                            log('可能原因：', 'warning');
+                            log('1. Qt 初始化失败', 'warning');
+                            log('2. embind 错误', 'warning');
+                            log('3. 需要更长时间渲染', 'warning');
                         }
                     }
+                    
+                    // Try to get more info
+                    if (typeof Module._main !== 'undefined') {
+                        log('✅ _main 函数存在', 'success');
+                    } else {
+                        log('❌ _main 函数不存在', 'error');
+                    }
                 }, 3000);
+                
+                // Check again after 10 seconds
+                setTimeout(function() {
+                    log('10秒后再次检查...', 'info');
+                    var ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        var imageData = ctx.getImageData(0, 0, 1, 1);
+                        if (imageData.data[3] > 0) {
+                            log('✅ Canvas 现在有内容了！', 'success');
+                        } else {
+                            log('❌ Canvas 仍然空白 - 可能有严重问题', 'error');
+                        }
+                    }
+                }, 10000);
             },
             onAbort: function(what) {
                 log('❌ 应用程序中止: ' + what, 'error');
