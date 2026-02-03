@@ -4,28 +4,47 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-// Disable Qt's settings system for WebAssembly to avoid embind issues
-EM_JS(void, js_disable_qt_settings, (), {
+
+// Prevent Qt from accessing localStorage
+EM_JS(void, js_block_localstorage, (), {
     // Override localStorage to prevent Qt from using it
-    if (typeof(Storage) !== "undefined") {
-        console.log("Qt settings disabled for WebAssembly");
-    }
+    var originalLocalStorage = window.localStorage;
+    Object.defineProperty(window, 'localStorage', {
+        get: function() {
+            console.warn('localStorage access blocked for Qt compatibility');
+            return {
+                getItem: function() { return null; },
+                setItem: function() {},
+                removeItem: function() {},
+                clear: function() {},
+                key: function() { return null; },
+                length: 0
+            };
+        },
+        configurable: false
+    });
+    console.log('Qt localStorage blocking enabled');
 });
 #endif
 
 int main(int argc, char *argv[])
 {
 #ifdef __EMSCRIPTEN__
-    // Disable settings before QApplication
-    js_disable_qt_settings();
-    // Set environment to disable QSettings
+    // Block localStorage before Qt initialization
+    js_block_localstorage();
+    
+    // Disable Qt features that might use embind
     qputenv("QT_NO_SETTINGS", "1");
+    qputenv("QT_NO_SESSIONMANAGER", "1");
+    qputenv("QT_LOGGING_RULES", "*.debug=false");
 #endif
     
     QApplication a(argc, argv);
     
-    // Set application icon
+#ifndef __EMSCRIPTEN__
+    // Set application icon (only for native platforms)
     a.setWindowIcon(QIcon(":/icons/app_icon.ico"));
+#endif
     
     MainWindow w;
     w.show();

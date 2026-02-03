@@ -312,6 +312,7 @@ jobs:
         mkdir -p deploy
         cp build-wasm/bin/SerialDebugger.* deploy/
         cp index.html deploy/
+        cp test-minimal.html deploy/
         cp test-wasm-loading.html deploy/
         cp test-qt-render.html deploy/
         cp test-webgl.html deploy/
@@ -322,6 +323,15 @@ jobs:
         ls -lh deploy/
         echo "=== Checking critical files ==="
         ls -lh deploy/SerialDebugger.* || echo "WARNING: SerialDebugger files not found!"
+        
+        echo "=== Checking .wasm file size ==="
+        WASM_SIZE=$(stat -f%z deploy/SerialDebugger.wasm 2>/dev/null || stat -c%s deploy/SerialDebugger.wasm 2>/dev/null || echo "0")
+        echo "SerialDebugger.wasm size: $WASM_SIZE bytes"
+        if [ "$WASM_SIZE" -lt 1000000 ]; then
+          echo "WARNING: .wasm file is too small ($WASM_SIZE bytes)!"
+        else
+          echo "✓ .wasm file size looks good"
+        fi
         
     - name: Upload WebAssembly build
       uses: actions/upload-artifact@v4

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最小化测试 - Serial Debugger</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+        }
+        #status {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #canvas {
+            display: block;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .log {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 5px 0;
+        }
+        .error { color: #d32f2f; }
+        .success { color: #388e3c; }
+        .warning { color: #f57c00; }
+    </style>
+</head>
+<body>
+    <div id="status">
+        <h2>WebAssembly 加载状态</h2>
+        <div id="logs"></div>
+    </div>
+    <canvas id="canvas" width="1200" height="800"></canvas>
+
+    <script>
+        var logs = document.getElementById('logs');
+        
+        function log(message, type = 'info') {
+            var timestamp = new Date().toLocaleTimeString();
+            var div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.textContent = '[' + timestamp + '] ' + message;
+            logs.appendChild(div);
+            console.log(message);
+            
+            // Auto-scroll
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        // Block localStorage before Qt loads
+        log('🔒 阻止 localStorage 访问...', 'warning');
+        var originalLocalStorage = window.localStorage;
+        Object.defineProperty(window, 'localStorage', {
+            get: function() {
+                log('⚠️ localStorage 访问被阻止', 'warning');
+                return {
+                    getItem: function() { return null; },
+                    setItem: function() {},
+                    removeItem: function() {},
+                    clear: function() {},
+                    key: function() { return null; },
+                    length: 0
+                };
+            },
+            configurable: false
+        });
+
+        var canvas = document.getElementById('canvas');
+        
+        var Module = {
+            preRun: [],
+            postRun: [],
+            print: function(text) {
+                log('[stdout] ' + text, 'info');
+            },
+            printErr: function(text) {
+                log('[stderr] ' + text, 'error');
+            },
+            qtCanvasElements: [canvas],
+            arguments: [],
+            environment: {
+                'QT_NO_SETTINGS': '1',
+                'QT_NO_SESSIONMANAGER': '1'
+            },
+            setStatus: function(text) {
+                if (text) {
+                    log(text, 'info');
+                } else {
+                    log('✅ 应用程序加载完成！', 'success');
+                    setTimeout(function() {
+                        canvas.style.display = 'block';
+                    }, 500);
+                }
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+                var message = left ? 
+                    '加载依赖项 (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 
+                    '所有依赖项已加载';
+                Module.setStatus(message);
+            },
+            onRuntimeInitialized: function() {
+                log('✅ WebAssembly 运行时初始化成功', 'success');
+                
+                // Check canvas after a delay
+                setTimeout(function() {
+                    var ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        var imageData = ctx.getImageData(0, 0, 1, 1);
+                        if (imageData.data[3] > 0) {
+                            log('✅ Canvas 有内容！', 'success');
+                        } else {
+                            log('⚠️ Canvas 仍然空白', 'warning');
+                        }
+                    }
+                }, 3000);
+            },
+            onAbort: function(what) {
+                log('❌ 应用程序中止: ' + what, 'error');
+            }
+        };
+
+        Module.setStatus('正在下载应用程序...');
+        
+        window.onerror = function(message, source, lineno, colno, error) {
+            log('❌ 错误: ' + message, 'error');
+            if (source) log('   位置: ' + source + ':' + lineno, 'error');
+            return false;
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+            log('❌ Promise 错误: ' + event.reason, 'error');
+        });
+
+        log('🚀 开始加载 WebAssembly...', 'info');
+    </script>
+    <script src="SerialDebugger.js"></script>
+</body>
+</html>
